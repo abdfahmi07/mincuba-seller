@@ -9,7 +9,6 @@ import {
   Marker,
   useJsApiLoader,
 } from "@react-google-maps/api";
-import type { SelectOption } from "@/interface/ISelectOption";
 import { getAddressFromLatLng, getCurrentLocation } from "@/helpers/location";
 import Select, { type SingleValue } from "react-select";
 import { toast } from "react-toastify";
@@ -21,14 +20,31 @@ import {
   fetchSubDistricts,
 } from "@/services/api/region";
 import { formatRegionForSelectOption } from "@/helpers/selectOption";
+import { isAxiosError } from "axios";
+import * as Yup from "yup";
+import type { SelectOption } from "@/interface/ISelectOption";
+import type { PostalCode } from "@/interface/IRegion";
 import "react-datepicker/dist/react-datepicker.css";
 import "./style/index.css";
-import type { PostalCode } from "@/interface/IRegion";
-import { isAxiosError } from "axios";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useForm } from "react-hook-form";
 
-// const schemaValidationStore = Yup.object().shape({
-
-// })
+const schemaValidationFormStore = Yup.object({
+  name: Yup.string().required("Nama Toko wajib diisi"),
+  phone: Yup.string()
+    .required("Nomor HP wajib diisi")
+    .matches(
+      /^(\\+62|62|0)8[1-9][0-9]{6,12}$/,
+      "Nomor HP tidak valid, gunakan format Indonesia"
+    ),
+  province: Yup.string().nullable().required("Provinsi wajib dipilih"),
+  city: Yup.string().nullable().required("Kota wajib dipilih"),
+  district: Yup.string().nullable().required("Kecamatan wajib dipilih"),
+  subDistrict: Yup.string().nullable().required("Kelurahan wajib dipilih"),
+  postalCode: Yup.string().required("Kode Pos wajib diisi"),
+  detailAddress: Yup.string().required("Alamat Lengkap wajib diisi"),
+  description: Yup.string().required("Deskripsi singkat wajib diisi"),
+});
 
 export default function EditStorePage() {
   const { data } = useStoreStatus();
@@ -59,20 +75,31 @@ export default function EditStorePage() {
   const autoCompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const currentUser = userStorage.get();
 
+  const { register, control, handleSubmit } = useForm<FormValues>({
+    resolver: yupResolver(schemaValidationFormStore),
+    defaultValues: {
+      name: "",
+      phone: "",
+      province: null,
+      city: null,
+      district: null,
+      subDistrict: null,
+      postalCode: "",
+      detailAddress: "",
+      description: "",
+    },
+  });
   const containerStyle = {
     width: "100%",
     height: "250px",
     borderRadius: "0.75rem",
   };
-
   const center = { lat: -6.2, lng: 106.816666 };
-
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: import.meta.env.VITE_API_KEY_GOOGLE_MAP,
     libraries: ["places"],
   });
-
   const [map, setMap] = useState<google.maps.Map | null>(null);
 
   const onLoad = useCallback(function callback(map: google.maps.Map) {
@@ -184,7 +211,6 @@ export default function EditStorePage() {
         return;
       }
 
-      // fallback kalau error-nya bukan axios
       toast.error("Terjadi kesalahan tak terduga", {
         position: "top-center",
       });
@@ -204,7 +230,6 @@ export default function EditStorePage() {
         return;
       }
 
-      // fallback kalau error-nya bukan axios
       toast.error("Terjadi kesalahan tak terduga", {
         position: "top-center",
       });
@@ -224,7 +249,6 @@ export default function EditStorePage() {
         return;
       }
 
-      // fallback kalau error-nya bukan axios
       toast.error("Terjadi kesalahan tak terduga", {
         position: "top-center",
       });
@@ -244,7 +268,6 @@ export default function EditStorePage() {
         return;
       }
 
-      // fallback kalau error-nya bukan axios
       toast.error("Terjadi kesalahan tak terduga", {
         position: "top-center",
       });
@@ -265,7 +288,6 @@ export default function EditStorePage() {
         return;
       }
 
-      // fallback kalau error-nya bukan axios
       toast.error("Terjadi kesalahan tak terduga", {
         position: "top-center",
       });
