@@ -1,0 +1,39 @@
+.pac-container {
+  z-index: 9999 !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16) !important;
+  border: 1px solid #e5e7eb !important;
+  overflow: hidden !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+}
+
+.pac-item {
+  padding: 10px 14px !important;
+  font-size: 0.875rem !important;
+  color: #111827 !important;
+  border-top: 1px solid #f3f4f6 !important;
+}
+
+.pac-item:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.pac-icon {
+  display: none !important;
+}
+
+.pac-item-query {
+  font-weight: 600 !important;
+}
+
+.pac-matched {
+  color: #2563eb !important;
+}
+
+.pac-container:after {
+  transform: scale(0.8);
+  opacity: 0.7;
+  right: 8px !important;
+  bottom: 4px !important;
+}
