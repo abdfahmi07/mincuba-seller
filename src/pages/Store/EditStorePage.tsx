@@ -21,10 +21,10 @@ import {
   fetchSubDistricts,
 } from "@/services/api/region";
 import { formatRegionForSelectOption } from "@/helpers/selectOption";
-import * as Yup from "yup";
 import "react-datepicker/dist/react-datepicker.css";
 import "./style/index.css";
 import type { PostalCode } from "@/interface/IRegion";
+import { isAxiosError } from "axios";
 
 // const schemaValidationStore = Yup.object().shape({
 
@@ -75,11 +75,11 @@ export default function EditStorePage() {
 
   const [map, setMap] = useState<google.maps.Map | null>(null);
 
-  const onLoad = useCallback(function callback(map) {
+  const onLoad = useCallback(function callback(map: google.maps.Map) {
     setMap(map);
   }, []);
 
-  const onUnmount = useCallback(function callback(map) {
+  const onUnmount = useCallback(function callback() {
     setMap(null);
   }, []);
 
@@ -154,7 +154,7 @@ export default function EditStorePage() {
       if (!isLoaded || !position || isAnimating) return;
 
       const address = await getAddressFromLatLng(position.lat, position.lng);
-      setCurrentAddress(address);
+      setCurrentAddress(address as string);
     };
 
     fetchCurrentAddress();
@@ -176,8 +176,16 @@ export default function EditStorePage() {
       const data = await fetchProvinces();
       const formattedData = formatRegionForSelectOption(data);
       setProvinces(formattedData);
-    } catch (err: any) {
-      toast.error(err.response.message, {
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+          position: "top-center",
+        });
+        return;
+      }
+
+      // fallback kalau error-nya bukan axios
+      toast.error("Terjadi kesalahan tak terduga", {
         position: "top-center",
       });
     }
@@ -188,8 +196,16 @@ export default function EditStorePage() {
       const data = await fetchCities(selectedProvince?.value);
       const formattedData = formatRegionForSelectOption(data);
       setCities(formattedData);
-    } catch (err: any) {
-      toast.error(err.response.message, {
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+          position: "top-center",
+        });
+        return;
+      }
+
+      // fallback kalau error-nya bukan axios
+      toast.error("Terjadi kesalahan tak terduga", {
         position: "top-center",
       });
     }
@@ -200,8 +216,16 @@ export default function EditStorePage() {
       const data = await fetchDistricts(`${selectedCity?.value}`);
       const formattedData = formatRegionForSelectOption(data);
       setDistricts(formattedData);
-    } catch (err: any) {
-      toast.error(err.response.message, {
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+          position: "top-center",
+        });
+        return;
+      }
+
+      // fallback kalau error-nya bukan axios
+      toast.error("Terjadi kesalahan tak terduga", {
         position: "top-center",
       });
     }
@@ -212,8 +236,16 @@ export default function EditStorePage() {
       const data = await fetchSubDistricts(`${selectedDistrict?.value}`);
       const formattedData = formatRegionForSelectOption(data);
       setSubDistricts(formattedData);
-    } catch (err: any) {
-      toast.error(err.response.message, {
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+          position: "top-center",
+        });
+        return;
+      }
+
+      // fallback kalau error-nya bukan axios
+      toast.error("Terjadi kesalahan tak terduga", {
         position: "top-center",
       });
     }
@@ -225,8 +257,16 @@ export default function EditStorePage() {
         `${selectedSubDistrict?.value}`
       );
       setSelectedPostalCode(data.postal_code);
-    } catch (err: any) {
-      toast.error(err.response.message, {
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+          position: "top-center",
+        });
+        return;
+      }
+
+      // fallback kalau error-nya bukan axios
+      toast.error("Terjadi kesalahan tak terduga", {
         position: "top-center",
       });
     }
