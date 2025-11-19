@@ -8,7 +8,8 @@ import list from "@/assets/images/icon/list.png";
 import CardStats from "@/components/Card/CardStats";
 import CardCourier from "@/components/Card/CardCourier";
 import { useStoreStatus } from "@/queries/useStoreStatus";
-import StoreClosed from "@/components/StoreClosed/StoreClosed";
+import closedStore from "@/assets/images/icon/store-closed.png";
+import NotFound from "@/components/NotFound/NotFound";
 
 export default function HomePage() {
   const [isOpenStore, setIsOpenStore] = useState<boolean>(false);
@@ -118,8 +119,14 @@ export default function HomePage() {
           </div>
         </>
       ) : (
-        <div className="py-5">
-          <StoreClosed />
+        <div className="py-2">
+          <NotFound
+            icon={closedStore}
+            message="Anda belum membuka toko. Silakan buka toko terlebih dahulu untuk
+          melanjutkan aktivitas ini."
+            urlNavigate="/store/create"
+            titleBtn="Buka Toko"
+          />
         </div>
       )}
     </div>

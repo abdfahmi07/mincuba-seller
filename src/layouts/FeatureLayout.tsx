@@ -16,7 +16,7 @@ export default function FeatureLayout({
   const navigate = useNavigate();
 
   return (
-    <div className="bg-[#ebebeb]">
+    <div className="bg-white">
       <div className="min-h-screen max-w-md m-auto">
         <main className={`bg-[${bgColor}] min-h-screen h-full`}>
           <header className="bg-[#F05000] grid grid-cols-[1fr_2fr_1fr] justify-items-center px-4 py-5">

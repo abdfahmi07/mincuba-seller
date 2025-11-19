@@ -12,7 +12,6 @@ export default function CardOrder({
           <h6 className="#A7A5A5 text-sm">Pembelian</h6>
           <h5 className="font-semibold text-sm">22 Okt 2025 13:04</h5>
         </div>
-        {/* Status Order */}
         {!isIncomingOrder && (
           <button className="text-sm mt-1 p-2 text-white bg-[#F05000] rounded-lg">
             Pesanan Diproses

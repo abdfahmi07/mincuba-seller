@@ -1,6 +1,7 @@
 import CardOrder from "@/components/Card/CardOrder";
-import StoreClosed from "@/components/StoreClosed/StoreClosed";
 import { useStoreStatus } from "@/queries/useStoreStatus";
+import closedStore from "@/assets/images/icon/store-closed.png";
+import NotFound from "@/components/NotFound/NotFound";
 
 export default function OrdersPage() {
   const { data } = useStoreStatus();
@@ -15,8 +16,14 @@ export default function OrdersPage() {
           <CardOrder isIncomingOrder={false} />
         </div>
       ) : (
-        <div className="pt-35 px-4">
-          <StoreClosed />
+        <div className="pt-24 px-4">
+          <NotFound
+            icon={closedStore}
+            message="Anda belum membuka toko. Silakan buka toko terlebih dahulu untuk
+          melanjutkan aktivitas ini."
+            urlNavigate="/store/create"
+            titleBtn="Buka Toko"
+          />
         </div>
       )}
     </>

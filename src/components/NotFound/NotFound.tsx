@@ -1,19 +1,25 @@
-import closedStore from "@/assets/images/icon/store-closed.png";
 import { NavLink } from "react-router-dom";
 
-export default function StoreClosed() {
+export default function NotFound({
+  icon,
+  message,
+  urlNavigate,
+  titleBtn,
+}: {
+  icon: string;
+  message: string;
+  urlNavigate: string;
+  titleBtn: string;
+}) {
   return (
     <div className="flex flex-col justify-center items-center gap-y-10 font-poppins px-4">
       <div className="flex flex-col gap-y-3 justify-center items-center text-center">
-        <img className="w-45" src={closedStore} alt="Closed Store" />
-        <h6>
-          Anda belum membuka toko. Silakan buka toko terlebih dahulu untuk
-          melanjutkan aktivitas ini.
-        </h6>
+        <img className="w-45" src={icon} alt="Icon" />
+        <h6>{message}</h6>
       </div>
-      <NavLink to="/store/edit">
+      <NavLink to={urlNavigate}>
         <button className="bg-[#F05000] text-white py-3 px-6 rounded-lg font-semibold cursor-pointer text-sm">
-          Buka Toko
+          {titleBtn}
         </button>
       </NavLink>
     </div>

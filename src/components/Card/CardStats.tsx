@@ -8,7 +8,6 @@ export default function CardStats({ stats }: CardStats) {
         <div className="w-7 h-7 bg-[#F05000] rounded-full flex justify-center items-center">
           <img className="w-4" src={stats.icon} alt="" />
         </div>
-
         <CountUp
           start={0}
           end={parseInt(stats.amount)}

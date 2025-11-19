@@ -5,17 +5,18 @@ import ProtectedRoute from "./ProtectedRoutes";
 import MainLayout from "@/layouts/MainLayout";
 import AuthLayout from "@/layouts/AuthLayout";
 import FeatureLayout from "@/layouts/FeatureLayout";
-import EditStorePage from "@/pages/Store/EditStorePage";
 
 const HomePage = lazy(() => import("@/pages/Home/HomePage"));
 const LoginPage = lazy(() => import("@/pages/Auth/Login/LoginPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFound/NotFoundPage"));
 const ProductsPage = lazy(() => import("@/pages/Products/ProductsPage"));
 const CreateProductPage = lazy(
-  () => import("@/pages/CreateProduct/CreateProductPage")
+  () => import("@/pages/Products/CreateProductPage")
 );
+const EditProductPage = lazy(() => import("@/pages/Products/EditProductPage"));
 const OrdersPage = lazy(() => import("@/pages/Orders/OrdersPage"));
 const StorePage = lazy(() => import("@/pages/Store/StorePage"));
+const EditStorePage = lazy(() => import("@/pages/Store/EditStorePage"));
 
 export const router = createBrowserRouter([
   {
@@ -78,8 +79,18 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    path: "/products/edit/:productId",
+    element: <FeatureLayout title="Edit Produk" />,
+    children: [
+      {
+        index: true,
+        element: <EditProductPage />,
+      },
+    ],
+  },
+  {
     path: "/orders",
-    element: <FeatureLayout title="Pesanan" bgColor="#EDEDED" />,
+    element: <FeatureLayout title="Pesanan" bgColor="#ededed" />,
     children: [
       {
         index: true,

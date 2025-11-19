@@ -1,6 +1,4 @@
-import user from "@/assets/images/product/user.jpeg";
 import { userStorage } from "@/helpers/userStorage";
-import { useStoreStatus } from "@/queries/useStoreStatus";
 import { ChevronRight, Edit2, LocateFixed, Minimize2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -10,7 +8,7 @@ import {
   useJsApiLoader,
 } from "@react-google-maps/api";
 import { getAddressFromLatLng, getCurrentLocation } from "@/helpers/location";
-import Select, { type SingleValue } from "react-select";
+import Select from "react-select";
 import { toast } from "react-toastify";
 import {
   fetchCities,
@@ -21,33 +19,74 @@ import {
 } from "@/services/api/region";
 import { formatRegionForSelectOption } from "@/helpers/selectOption";
 import { isAxiosError } from "axios";
-// import * as Yup from "yup";
-import type { SelectOption } from "@/interface/ISelectOption";
+import * as Yup from "yup";
+import type { Option } from "@/interface/ISelectOption";
 import type { PostalCode } from "@/interface/IRegion";
 import "react-datepicker/dist/react-datepicker.css";
 import "./style/index.css";
-// import { yupResolver } from "@hookform/resolvers/yup";
-// import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+// import type { FormStore } from "@/interface/IFormStore";
+import { openStore } from "@/services/api/store";
+import { useNavigate } from "react-router-dom";
 
-// const schemaValidationFormStore = Yup.object({
-//   name: Yup.string().required("Nama Toko wajib diisi"),
-//   phone: Yup.string()
-//     .required("Nomor HP wajib diisi")
-//     .matches(
-//       /^(\\+62|62|0)8[1-9][0-9]{6,12}$/,
-//       "Nomor HP tidak valid, gunakan format Indonesia"
-//     ),
-//   province: Yup.string().nullable().required("Provinsi wajib dipilih"),
-//   city: Yup.string().nullable().required("Kota wajib dipilih"),
-//   district: Yup.string().nullable().required("Kecamatan wajib dipilih"),
-//   subDistrict: Yup.string().nullable().required("Kelurahan wajib dipilih"),
-//   postalCode: Yup.string().required("Kode Pos wajib diisi"),
-//   detailAddress: Yup.string().required("Alamat Lengkap wajib diisi"),
-//   description: Yup.string().required("Deskripsi singkat wajib diisi"),
-// });
+const schemaValidationFormStore = Yup.object({
+  name: Yup.string().required("Nama Toko wajib diisi"),
+  phone: Yup.string()
+    .required("Nomor HP wajib diisi")
+    .matches(
+      /^(\\+62|62|0)8[1-9][0-9]{6,12}$/,
+      "Nomor HP tidak valid, gunakan format Indonesia"
+    ),
+
+  province: Yup.object({
+    value: Yup.string(),
+    label: Yup.string(),
+  })
+    .nullable()
+    .test(
+      "required-province",
+      "Provinsi wajib dipilih",
+      (v) => !!v && !!v.value
+    ),
+
+  city: Yup.object({
+    value: Yup.string(),
+    label: Yup.string(),
+  })
+    .nullable()
+    .test("required-city", "Kota wajib dipilih", (v) => !!v && !!v.value),
+
+  district: Yup.object({
+    value: Yup.string(),
+    label: Yup.string(),
+  })
+    .nullable()
+    .test(
+      "required-district",
+      "Kecamatan wajib dipilih",
+      (v) => !!v && !!v.value
+    ),
+
+  subDistrict: Yup.object({
+    value: Yup.string(),
+    label: Yup.string(),
+  })
+    .nullable()
+    .test(
+      "required-subDistrict",
+      "Kelurahan wajib dipilih",
+      (v) => !!v && !!v.value
+    ),
+
+  postalCode: Yup.string().required("Kode Pos wajib diisi"),
+  detailAddress: Yup.string().required("Alamat Lengkap wajib diisi"),
+  description: Yup.string().required("Deskripsi singkat wajib diisi"),
+});
+
+type FormStore = Yup.InferType<typeof schemaValidationFormStore>;
 
 export default function EditStorePage() {
-  const { data } = useStoreStatus();
   const [isShowMapFullScreen, setIsShowMapFullScreen] =
     useState<boolean>(false);
   const [position, setPosition] = useState<google.maps.LatLngLiteral | null>(
@@ -55,37 +94,45 @@ export default function EditStorePage() {
   );
   const [currentAddress, setCurrentAddress] = useState<string | null>("");
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
-  const [provinces, setProvinces] = useState<SelectOption[]>([]);
-  const [selectedProvince, setSelectedProvince] = useState<SelectOption | null>(
-    null
-  );
-  const [cities, setCities] = useState<SelectOption[]>([]);
-  const [selectedCity, setSelectedCity] = useState<SelectOption | null>(null);
-  const [districts, setDistricts] = useState<SelectOption[]>([]);
-  const [selectedDistrict, setSelectedDistrict] = useState<SelectOption | null>(
-    null
-  );
-  const [subDistricts, setSubDistricts] = useState<SelectOption[]>([]);
-  const [selectedSubDistrict, setSelectedSubDistrict] =
-    useState<SelectOption | null>(null);
-  const [selectedPostalCode, setSelectedPostalCode] = useState<string>("");
-  const [detailAddress, setDetailAddress] = useState<string>("");
+  const [provinces, setProvinces] = useState<Option[]>([]);
+  const [cities, setCities] = useState<Option[]>([]);
+  const [districts, setDistricts] = useState<Option[]>([]);
+  const [subDistricts, setSubDistricts] = useState<Option[]>([]);
   const targetRef = useRef<google.maps.LatLngLiteral | null>(null);
   const animationFrame = useRef<number | null>(null);
   const autoCompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const currentUser = userStorage.get();
+  const navigate = useNavigate();
 
-  // const formStore = useForm({
-  //   resolver: yupResolver(schemaValidationFormStore),
-  //   defaultValues: {
-  //     name: "",
-  //     phone: "",
+  const {
+    register,
+    watch,
+    control,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+  } = useForm<FormStore>({
+    resolver: yupResolver(schemaValidationFormStore),
+    mode: "onChange",
+    reValidateMode: "onChange",
+    defaultValues: {
+      name: "",
+      phone: "",
+      province: null,
+      city: null,
+      district: null,
+      subDistrict: null,
+      postalCode: "",
+      detailAddress: "",
+      description: "",
+    },
+  });
 
-  //     postalCode: "",
-  //     detailAddress: "",
-  //     description: "",
-  //   },
-  // });
+  const province = watch("province");
+  const city = watch("city");
+  const district = watch("district");
+  const subDistrict = watch("subDistrict");
+
   const containerStyle = {
     width: "100%",
     height: "250px",
@@ -135,7 +182,6 @@ export default function EditStorePage() {
       } else {
         setPosition(to);
 
-        // ✅ animasi selesai
         setIsAnimating(false);
 
         if (animationFrame.current) {
@@ -215,8 +261,9 @@ export default function EditStorePage() {
   };
 
   const getCities = async () => {
+    if (!province?.value) return;
     try {
-      const data = await fetchCities(selectedProvince?.value);
+      const data = await fetchCities(province.value);
       const formattedData = formatRegionForSelectOption(data);
       setCities(formattedData);
     } catch (err: unknown) {
@@ -234,8 +281,9 @@ export default function EditStorePage() {
   };
 
   const getDistricts = async () => {
+    if (!city?.value) return;
     try {
-      const data = await fetchDistricts(`${selectedCity?.value}`);
+      const data = await fetchDistricts(city.value);
       const formattedData = formatRegionForSelectOption(data);
       setDistricts(formattedData);
     } catch (err: unknown) {
@@ -253,8 +301,9 @@ export default function EditStorePage() {
   };
 
   const getSubDistricts = async () => {
+    if (!district?.value) return;
     try {
-      const data = await fetchSubDistricts(`${selectedDistrict?.value}`);
+      const data = await fetchSubDistricts(district.value);
       const formattedData = formatRegionForSelectOption(data);
       setSubDistricts(formattedData);
     } catch (err: unknown) {
@@ -272,11 +321,10 @@ export default function EditStorePage() {
   };
 
   const getPostalCode = async () => {
+    if (!subDistrict?.value) return;
     try {
-      const data: PostalCode = await fetchPostalCode(
-        `${selectedSubDistrict?.value}`
-      );
-      setSelectedPostalCode(data.postal_code);
+      const data: PostalCode = await fetchPostalCode(subDistrict.value);
+      setValue("postalCode", data.postal_code);
     } catch (err: unknown) {
       if (isAxiosError(err)) {
         toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
@@ -297,64 +345,73 @@ export default function EditStorePage() {
   }, []);
 
   useEffect(() => {
-    if (selectedProvince) {
+    if (province) {
       getCities();
     }
     return () => {};
-  }, [selectedProvince]);
+  }, [province]);
 
   useEffect(() => {
-    if (selectedProvince && selectedCity) {
+    if (province && city) {
       getDistricts();
     }
     return () => {};
-  }, [selectedProvince, selectedCity]);
+  }, [province, city]);
 
   useEffect(() => {
-    if (selectedProvince && selectedCity && selectedDistrict) {
+    if (province && city && district) {
       getSubDistricts();
     }
     return () => {};
-  }, [selectedProvince, selectedCity, selectedDistrict]);
+  }, [province, city, district]);
 
   useEffect(() => {
-    if (
-      selectedProvince &&
-      selectedCity &&
-      selectedDistrict &&
-      selectedSubDistrict
-    ) {
+    if (province && city && district && subDistrict) {
       getPostalCode();
     }
     return () => {};
-  }, [selectedProvince, selectedCity, selectedDistrict, selectedSubDistrict]);
+  }, [province, city, district, subDistrict]);
 
-  const handleChangeProvinceOptions = (value: SingleValue<SelectOption>) => {
-    setSelectedProvince(value);
-    setSelectedCity(null);
-    setSelectedDistrict(null);
-    setSelectedSubDistrict(null);
-    setSelectedPostalCode("");
-  };
-
-  const handleChangeCityOptions = (value: SingleValue<SelectOption>) => {
-    setSelectedCity(value);
-    setSelectedDistrict(null);
-    setSelectedSubDistrict(null);
-    setSelectedPostalCode("");
-  };
-
-  const handleChangeDistrictOptions = (value: SingleValue<SelectOption>) => {
-    setSelectedDistrict(value);
-    setSelectedSubDistrict(null);
-    setSelectedPostalCode("");
-  };
-
-  const handleChangeSubDistrictOptions = async (
-    value: SingleValue<SelectOption>
+  const handleChangeProvinceOptions = (
+    option: Option | null,
+    fOnChange: (value: Option | null) => void
   ) => {
-    setSelectedSubDistrict(value);
-    setSelectedPostalCode("");
+    fOnChange(option);
+
+    setValue("city", null);
+    setValue("district", null);
+    setValue("subDistrict", null);
+    setValue("postalCode", "");
+  };
+
+  const handleChangeCityOptions = (
+    option: Option | null,
+    fOnChange: (value: Option | null) => void
+  ) => {
+    fOnChange(option);
+
+    setValue("district", null);
+    setValue("subDistrict", null);
+    setValue("postalCode", "");
+  };
+
+  const handleChangeDistrictOptions = (
+    option: Option | null,
+    fOnChange: (value: Option | null) => void
+  ) => {
+    fOnChange(option);
+
+    setValue("subDistrict", null);
+    setValue("postalCode", "");
+  };
+
+  const handleChangeSubDistrictOptions = (
+    option: Option | null,
+    fOnChange: (value: Option | null) => void
+  ) => {
+    fOnChange(option);
+
+    setValue("postalCode", "");
   };
 
   const handleChoosePinpoint = () => {
@@ -362,30 +419,51 @@ export default function EditStorePage() {
     // setDetailAddress(currentAddress ?? "");
   };
 
+  const createOrOpenStore: SubmitHandler<FormStore> = async (data) => {
+    try {
+      const { subDistrict } = data;
+      await openStore({
+        code: subDistrict?.value,
+        latLng: {
+          lat: position?.lat ? position?.lat : 0,
+          lng: position?.lng ? position?.lng : 0,
+        },
+        ...data,
+      });
+
+      navigate("/store");
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+          position: "top-center",
+        });
+        return;
+      }
+
+      toast.error("Terjadi kesalahan tak terduga", {
+        position: "top-center",
+      });
+    }
+  };
+
   return (
     <div className="relative bg-white min-h-screen rounded-t-4xl font-poppins pt-4 pb-20 px-8">
-      <form className="flex flex-col gap-y-4">
+      <form
+        className="flex flex-col gap-y-4"
+        onSubmit={handleSubmit(createOrOpenStore)}
+      >
         <div className="relative mt-20 bg-[#F2F2F2] rounded-2xl p-6 flex items-center flex-col gap-y-5 ">
           <div className="absolute -top-14">
             <div className="relative w-30 m-auto">
-              {data?.exists ? (
-                <img
-                  className="rounded-full border-4 border-white w-full"
-                  src={user}
-                  alt="User"
-                />
-              ) : (
-                <div className="w-30 h-30 flex justify-center items-center text-white rounded-full bg-[#F05000] ">
-                  <h3 className="uppercase text-3xl font-semibold">
-                    {currentUser.username.includes(" ")
-                      ? `${currentUser.username.split(" ")[0][0]}${
-                          currentUser.username.split(" ")[1][0]
-                        }`
-                      : `${currentUser.username[0]}${currentUser.username[1]}`}
-                  </h3>
-                </div>
-              )}
-
+              <div className="w-30 h-30 flex justify-center items-center text-white rounded-full bg-[#F05000] ">
+                <h3 className="uppercase text-3xl font-semibold">
+                  {currentUser.username.includes(" ")
+                    ? `${currentUser.username.split(" ")[0][0]}${
+                        currentUser.username.split(" ")[1][0]
+                      }`
+                    : `${currentUser.username[0]}${currentUser.username[1]}`}
+                </h3>
+              </div>
               <div className="absolute bottom-1 p-1 right-1 bg-white border-2 border-[#f05000] rounded-full">
                 <Edit2 color="#f05000" size={16} />
               </div>
@@ -397,63 +475,136 @@ export default function EditStorePage() {
               Nama Toko
             </label>
             <input
+              {...register("name")}
               className="outline-none bg-white p-3 rounded-lg text-sm border focus:border-gray-400 border-gray-200"
               placeholder="Mincuba Store"
               type="text"
             />
+            {errors.name && (
+              <p className="text-xs text-red-500">{errors.name.message}</p>
+            )}
           </div>
           <div className="flex flex-col gap-y-2 w-full">
             <label htmlFor="" className="text-sm text-black/40 font-medium">
               Nomor Handphone
             </label>
             <input
+              {...register("phone")}
               className="outline-none bg-white p-3 rounded-lg text-sm border focus:border-gray-400 border-gray-200"
               placeholder="081234567890"
               type="text"
             />
+            {errors.phone && (
+              <p className="text-xs text-red-500">{errors.phone.message}</p>
+            )}
           </div>
           <div className="flex flex-col gap-y-2 w-full">
             <label htmlFor="" className="text-sm text-black/40 font-medium">
               Provinsi
             </label>
-            <Select
-              unstyled
-              className="w-full"
-              classNames={{
-                control: (state) =>
-                  `bg-white p-3 rounded-lg text-sm border
+            <Controller
+              name="province"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  unstyled
+                  className="w-full"
+                  classNames={{
+                    control: (state) =>
+                      `bg-white p-3 rounded-lg text-sm border
                   ${state.isFocused ? "border-gray-400" : "border-gray-200"}
                   outline-none`,
-                valueContainer: () => "p-0",
-                input: () => "text-sm",
-                singleValue: () => "text-sm",
-                placeholder: () => "text-sm text-gray-400",
-                menu: () => "mt-2 bg-white rounded-lg shadow text-sm",
-                option: ({ isSelected, isFocused }) =>
-                  `px-3 py-2 cursor-pointer text-sm
+                    valueContainer: () => "p-0",
+                    input: () => "text-sm",
+                    singleValue: () => "text-sm",
+                    placeholder: () => "text-sm text-gray-400",
+                    menu: () => "mt-2 bg-white rounded-lg shadow text-sm",
+                    option: ({ isSelected, isFocused }) =>
+                      `px-3 py-2 cursor-pointer text-sm
                 ${isSelected ? "bg-[#F05000] text-white" : ""}
                 ${!isSelected && isFocused ? "bg-gray-100" : ""}`,
-                indicatorsContainer: () => "flex items-center gap-2",
-                clearIndicator: () =>
-                  "text-gray-400 hover:text-gray-600 cursor-pointer",
-                dropdownIndicator: () =>
-                  "text-gray-400 hover:text-gray-600 cursor-pointer pr-1",
-              }}
-              components={{
-                IndicatorSeparator: () => null,
-              }}
-              options={provinces}
-              value={selectedProvince}
-              onChange={(val) => handleChangeProvinceOptions(val)}
-              isClearable
-              isSearchable
+                    indicatorsContainer: () => "flex items-center gap-2",
+                    clearIndicator: () =>
+                      "text-gray-400 hover:text-gray-600 cursor-pointer",
+                    dropdownIndicator: () =>
+                      "text-gray-400 hover:text-gray-600 cursor-pointer pr-1",
+                  }}
+                  components={{
+                    IndicatorSeparator: () => null,
+                  }}
+                  options={provinces}
+                  value={field.value}
+                  onChange={(opt) =>
+                    handleChangeProvinceOptions(
+                      opt as Option | null,
+                      field.onChange
+                    )
+                  }
+                  isClearable
+                  isSearchable
+                />
+              )}
             />
+            {errors.province && (
+              <p className="text-xs text-red-500">{errors.province.message}</p>
+            )}
           </div>
           <div className="flex flex-col gap-y-2 w-full">
             <label htmlFor="" className="text-sm text-black/40 font-medium">
               Kota/Kabupaten
             </label>
-            <Select
+            <Controller
+              name="city"
+              control={control}
+              render={({ field }) => {
+                const canSelectCity = !!province?.value;
+
+                return (
+                  <Select
+                    unstyled
+                    className="w-full"
+                    classNames={{
+                      control: (state) =>
+                        `bg-white p-3 rounded-lg text-sm border
+                  ${state.isFocused ? "border-gray-400" : "border-gray-200"}
+                  outline-none`,
+                      valueContainer: () => "p-0",
+                      input: () => "text-sm",
+                      singleValue: () => "text-sm",
+                      placeholder: () => "text-sm text-gray-400",
+                      menu: () => "mt-2 bg-white rounded-lg shadow text-sm",
+                      option: ({ isSelected, isFocused }) =>
+                        `px-3 py-2 cursor-pointer text-sm
+                ${isSelected ? "bg-[#F05000] text-white" : ""}
+                ${!isSelected && isFocused ? "bg-gray-100" : ""}`,
+                      indicatorsContainer: () => "flex items-center gap-2",
+                      clearIndicator: () =>
+                        "text-gray-400 hover:text-gray-600 cursor-pointer",
+                      dropdownIndicator: () =>
+                        "text-gray-400 hover:text-gray-600 cursor-pointer pr-1",
+                    }}
+                    components={{
+                      IndicatorSeparator: () => null,
+                    }}
+                    options={canSelectCity ? cities : []}
+                    value={field.value}
+                    onChange={(opt) =>
+                      handleChangeCityOptions(
+                        opt as Option | null,
+                        field.onChange
+                      )
+                    }
+                    isClearable
+                    isSearchable
+                    isDisabled={!canSelectCity}
+                  />
+                );
+              }}
+            />
+            {errors.city && (
+              <p className="text-xs text-red-500">{errors.city.message}</p>
+            )}
+            {/* <Select
               unstyled
               className="w-full"
               classNames={{
@@ -485,13 +636,64 @@ export default function EditStorePage() {
               isClearable
               isSearchable
               isDisabled={!selectedProvince}
-            />
+            /> */}
           </div>
           <div className="flex flex-col gap-y-2 w-full">
             <label htmlFor="" className="text-sm text-black/40 font-medium">
               Kecamatan
             </label>
-            <Select
+            <Controller
+              name="district"
+              control={control}
+              render={({ field }) => {
+                const canSelectDistrict = !!(province?.value && city?.value);
+
+                return (
+                  <Select
+                    unstyled
+                    className="w-full"
+                    classNames={{
+                      control: (state) =>
+                        `bg-white p-3 rounded-lg text-sm border
+                  ${state.isFocused ? "border-gray-400" : "border-gray-200"}
+                  outline-none`,
+                      valueContainer: () => "p-0",
+                      input: () => "text-sm",
+                      singleValue: () => "text-sm",
+                      placeholder: () => "text-sm text-gray-400",
+                      menu: () => "mt-2 bg-white rounded-lg shadow text-sm",
+                      option: ({ isSelected, isFocused }) =>
+                        `px-3 py-2 cursor-pointer text-sm
+                ${isSelected ? "bg-[#F05000] text-white" : ""}
+                ${!isSelected && isFocused ? "bg-gray-100" : ""}`,
+                      indicatorsContainer: () => "flex items-center gap-2",
+                      clearIndicator: () =>
+                        "text-gray-400 hover:text-gray-600 cursor-pointer",
+                      dropdownIndicator: () =>
+                        "text-gray-400 hover:text-gray-600 cursor-pointer pr-1",
+                    }}
+                    components={{
+                      IndicatorSeparator: () => null,
+                    }}
+                    options={canSelectDistrict ? districts : []}
+                    value={field.value}
+                    onChange={(opt) =>
+                      handleChangeDistrictOptions(
+                        opt as Option | null,
+                        field.onChange
+                      )
+                    }
+                    isClearable
+                    isSearchable
+                    isDisabled={!canSelectDistrict}
+                  />
+                );
+              }}
+            />
+            {errors.district && (
+              <p className="text-xs text-red-500">{errors.district.message}</p>
+            )}
+            {/* <Select
               unstyled
               className="w-full"
               classNames={{
@@ -523,13 +725,70 @@ export default function EditStorePage() {
               isClearable
               isSearchable
               isDisabled={!(selectedProvince && selectedCity)}
-            />
+            /> */}
           </div>
           <div className="flex flex-col gap-y-2 w-full">
             <label htmlFor="" className="text-sm text-black/40 font-medium">
               Kelurahan
             </label>
-            <Select
+            <Controller
+              name="subDistrict"
+              control={control}
+              render={({ field }) => {
+                const canSelectSubDistrict = !!(
+                  province?.value &&
+                  city?.value &&
+                  district?.value
+                );
+
+                return (
+                  <Select
+                    unstyled
+                    className="w-full"
+                    classNames={{
+                      control: (state) =>
+                        `bg-white p-3 rounded-lg text-sm border
+                  ${state.isFocused ? "border-gray-400" : "border-gray-200"}
+                  outline-none`,
+                      valueContainer: () => "p-0",
+                      input: () => "text-sm",
+                      singleValue: () => "text-sm",
+                      placeholder: () => "text-sm text-gray-400",
+                      menu: () => "mt-2 bg-white rounded-lg shadow text-sm",
+                      option: ({ isSelected, isFocused }) =>
+                        `px-3 py-2 cursor-pointer text-sm
+                ${isSelected ? "bg-[#F05000] text-white" : ""}
+                ${!isSelected && isFocused ? "bg-gray-100" : ""}`,
+                      indicatorsContainer: () => "flex items-center gap-2",
+                      clearIndicator: () =>
+                        "text-gray-400 hover:text-gray-600 cursor-pointer",
+                      dropdownIndicator: () =>
+                        "text-gray-400 hover:text-gray-600 cursor-pointer pr-1",
+                    }}
+                    components={{
+                      IndicatorSeparator: () => null,
+                    }}
+                    options={canSelectSubDistrict ? subDistricts : []}
+                    value={field.value}
+                    onChange={(opt) =>
+                      handleChangeSubDistrictOptions(
+                        opt as Option | null,
+                        field.onChange
+                      )
+                    }
+                    isClearable
+                    isSearchable
+                    isDisabled={!canSelectSubDistrict}
+                  />
+                );
+              }}
+            />
+            {errors.subDistrict && (
+              <p className="text-xs text-red-500">
+                {errors.subDistrict.message}
+              </p>
+            )}
+            {/* <Select
               unstyled
               className="w-full"
               classNames={{
@@ -567,31 +826,39 @@ export default function EditStorePage() {
               isDisabled={
                 !(selectedProvince && selectedCity && selectedDistrict)
               }
-            />
+            /> */}
           </div>
           <div className="flex flex-col gap-y-2 w-full">
             <label htmlFor="" className="text-sm text-black/40 font-medium">
               Kode Pos
             </label>
             <input
+              {...register("postalCode")}
               className="outline-none bg-white p-3 rounded-lg text-sm border focus:border-gray-400 border-gray-200"
-              value={selectedPostalCode}
-              onChange={(e) => setSelectedPostalCode(e.target.value)}
               placeholder="1240"
               type="text"
             />
+            {errors.postalCode && (
+              <p className="text-xs text-red-500">
+                {errors.postalCode.message}
+              </p>
+            )}
           </div>
           <div className="flex flex-col gap-y-2 w-full">
             <label htmlFor="" className="text-sm text-black/40 font-medium">
               Alamat Lengkap
             </label>
             <textarea
+              {...register("detailAddress")}
               rows={5}
               className="outline-none bg-white p-3 rounded-lg text-sm border focus:border-gray-400 border-gray-200"
               placeholder="Jl. Sudirman No. 25"
-              onChange={(e) => setDetailAddress(e.target.value)}
-              value={detailAddress}
             ></textarea>
+            {errors.detailAddress && (
+              <p className="text-xs text-red-500">
+                {errors.detailAddress.message}
+              </p>
+            )}
             {isLoaded ? (
               <div className="flex flex-col gap-y-3">
                 <button
@@ -648,21 +915,30 @@ export default function EditStorePage() {
               type="text"
             />
           </div> */}
-          <div className="flex flex-col gap-y-2 w-full">
+          <div className="flex flex-col gap-y-2 w-full mb-3">
             <label htmlFor="" className="text-sm text-black/40 font-medium">
               Deskripsi Singkat
             </label>
             <textarea
+              {...register("description")}
               rows={5}
-              className="outline-none bg-white p-3 rounded-lg text-sm border focus:border-gray-400 border-gray-200 mb-3"
+              className="outline-none bg-white p-3 rounded-lg text-sm border focus:border-gray-400 border-gray-200 "
               placeholder="Tuliskan secara singkat tentang toko Anda"
             ></textarea>
+            {errors.description && (
+              <p className="text-xs text-red-500">
+                {errors.description.message}
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm mt-4 w-full font-semibold">
             <button className="bg-white text-black/70 rounded-lg p-2">
               Batal
             </button>
-            <button className="bg-[#F05000] text-white rounded-lg p-2">
+            <button
+              className="bg-[#F05000] text-white rounded-lg p-2"
+              type="submit"
+            >
               Simpan
             </button>
           </div>
