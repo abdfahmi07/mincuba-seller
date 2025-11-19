@@ -476,7 +476,7 @@ export default function EditProductPage() {
                     value={field.value}
                     onChange={field.onChange}
                     style={{
-                      height: "200px",
+                      minHeight: "200px",
                       display: "flex",
                       flexDirection: "column",
                     }}
@@ -496,7 +496,7 @@ export default function EditProductPage() {
           type="submit"
           className="w-full py-3 rounded-lg text-white font-semibold bg-[#F05000]"
         >
-          Tambah Produk
+          Simpan
         </button>
       </form>
     </div>
