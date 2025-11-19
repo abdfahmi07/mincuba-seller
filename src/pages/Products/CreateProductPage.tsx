@@ -271,6 +271,12 @@ export default function CreateProductPage() {
             {errors.stock && (
               <p className="text-xs text-red-500">{errors.stock.message}</p>
             )}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-y-4">
+          <label className="font-medium">Min. Pesanan</label>
+          <div className="flex flex-col gap-y-2">
             <input
               className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4]"
               type="text"
@@ -282,6 +288,30 @@ export default function CreateProductPage() {
             )}
           </div>
         </div>
+
+        {/* <div className="flex flex-col gap-y-4">
+          <label className="font-medium">Stok</label>
+          <div className="flex flex-col gap-y-2">
+            <input
+              className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4]"
+              type="text"
+              placeholder="Stok Tersedia"
+              {...register("stock")}
+            />
+            {errors.stock && (
+              <p className="text-xs text-red-500">{errors.stock.message}</p>
+            )}
+            <input
+              className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4]"
+              type="text"
+              placeholder="Minimum Pesanan"
+              {...register("minOrder")}
+            />
+            {errors.minOrder && (
+              <p className="text-xs text-red-500">{errors.minOrder.message}</p>
+            )}
+          </div>
+        </div> */}
 
         <div className="flex flex-col gap-y-2">
           <label className="font-medium">Kondisi</label>
