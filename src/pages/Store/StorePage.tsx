@@ -82,11 +82,11 @@ export default function StorePage() {
           </div>
         ) : (
           <p className="text-sm text-center w-[90%] m-auto">
-            {store?.Address.detail}
+            {`${store?.Address.detail}, ${store?.Address.sub_district}, ${store?.Address.district}, ${store?.Address.city}, ${store?.Address.province}, ${store?.Address.postal_code}`}
           </p>
         )}
       </div>
-      <ul className="bg-[#F2F2F2] rounded-lg p-5 flex flex-col gap-y-5 mt-4">
+      <ul className="bg-[#F2F2F2] rounded-lg p-4.5 flex flex-col gap-y-5 mt-4">
         <li className="">
           <NavLink
             to="/store/edit"
@@ -94,7 +94,7 @@ export default function StorePage() {
           >
             <div className="flex items-center gap-x-2">
               <Pencil color="#f05000" size={16} />
-              <h6 className="text-sm">Edit Toko</h6>
+              <h6 className="text-sm font-medium text-black/70">Edit Toko</h6>
             </div>
             <ChevronRight size={24} color="#333" />
           </NavLink>
@@ -103,7 +103,7 @@ export default function StorePage() {
           <NavLink to="/products" className="flex justify-between">
             <div className="flex items-center gap-x-2">
               <Package color="#f05000" size={16} />
-              <h6 className="text-sm">Produk</h6>
+              <h6 className="text-sm font-medium text-black/70">Produk</h6>
             </div>
             <ChevronRight size={24} color="#333" />
           </NavLink>

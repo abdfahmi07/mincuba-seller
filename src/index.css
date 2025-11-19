@@ -4,3 +4,13 @@
 @theme {
   --font-poppins: "Poppins", sans-serif;
 }
+
+.ql-editor {
+  font-size: 16px;
+  min-height: 200px;
+}
+
+.swal2-container {
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+}

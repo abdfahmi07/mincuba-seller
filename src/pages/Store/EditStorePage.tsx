@@ -932,7 +932,10 @@ export default function EditStorePage() {
             )}
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm mt-4 w-full font-semibold">
-            <button className="bg-white text-black/70 rounded-lg p-2">
+            <button
+              className="bg-white text-black/70 rounded-lg p-2"
+              type="button"
+            >
               Batal
             </button>
             <button

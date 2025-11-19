@@ -12,7 +12,7 @@ import closedStore from "@/assets/images/icon/store-closed.png";
 import NotFound from "@/components/NotFound/NotFound";
 
 export default function HomePage() {
-  const [isOpenStore, setIsOpenStore] = useState<boolean>(false);
+  const [isOpenStore, setIsOpenStore] = useState<boolean>(true);
   const { data } = useStoreStatus();
   const [stats] = useState<Stats[]>([
     {
@@ -109,7 +109,7 @@ export default function HomePage() {
               <CardStats key={idx} stats={stat} />
             ))}
           </div>
-          <div className="flex flex-col gap-y-3 mt-7">
+          <div className="flex flex-col gap-y-3 mt-7 mb-10">
             <h5 className="font-semibold text-black">Status Ekspedisi</h5>
             <div className="grid grid-cols-1 gap-3">
               {couriers.map((courier, idx) => (

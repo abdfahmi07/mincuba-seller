@@ -75,19 +75,19 @@ export default function LoginPage() {
           <div className="flex items-center flex-col gap-y-3 w-full">
             <div className="flex flex-col gap-y-2 w-[85%]">
               <input
-                className="outline-none shadow-[0_3px_2px_rgba(0,0,0,0.12)] p-4 bg-[#F2F2F2] placeholder:font-semibold placeholder:text-[#BFBFBF] rounded-3xl w-full text-xs text-[#5a5a5a]"
+                className="outline-none shadow-[0_3px_2px_rgba(0,0,0,0.12)] p-4 bg-[#F2F2F2] placeholder:font-semibold placeholder:text-[#BFBFBF] rounded-3xl w-full text-sm text-[#5a5a5a]"
                 type="text"
                 placeholder="Username"
                 {...register("username")}
               />
-              <p className="text-[10px] text-red-500 pl-3 italic">
+              <p className="text-xs text-red-500 pl-3">
                 {errors.username?.message}
               </p>
             </div>
             <div className="flex flex-col gap-y-2 w-[85%]">
               <div className="relative w-full">
                 <input
-                  className="outline-none shadow-[0_3px_2px_rgba(0,0,0,0.12)] p-4 bg-[#F2F2F2] placeholder:font-semibold placeholder:text-[#BFBFBF] w-full rounded-3xl text-xs text-[#5a5a5a]"
+                  className="outline-none shadow-[0_3px_2px_rgba(0,0,0,0.12)] p-4 bg-[#F2F2F2] placeholder:font-semibold placeholder:text-[#BFBFBF] w-full rounded-3xl text-sm text-[#5a5a5a]"
                   type={`${isShowPassword ? "text" : "password"}`}
                   placeholder="Kata Sandi"
                   {...register("password")}
@@ -106,7 +106,7 @@ export default function LoginPage() {
                   />
                 )}
               </div>
-              <p className="text-[10px] text-red-500 pl-3 italic">
+              <p className="text-xs text-red-500 pl-3">
                 {errors.password?.message}
               </p>
             </div>

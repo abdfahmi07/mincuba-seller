@@ -439,6 +439,7 @@ export default function CreateProductPage() {
                       minHeight: "200px",
                       display: "flex",
                       flexDirection: "column",
+                      fontSize: "1rem",
                     }}
                   />
                   {fieldState.error && (
