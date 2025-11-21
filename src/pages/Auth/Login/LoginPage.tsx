@@ -23,10 +23,6 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [isShowPassword, setIsShowPassword] = useState(false);
 
-  console.log(import.meta.env.MODE); // "staging"
-  console.log(import.meta.env.VITE_APP_ENV); // "staging"
-  console.log(import.meta.env.VITE_API_BASE_URL);
-
   const {
     register,
     handleSubmit,
@@ -40,8 +36,7 @@ export default function LoginPage() {
   const onSubmit: SubmitHandler<Inputs> = async (values) => {
     try {
       const { username, password } = values;
-      const data = await login(username, password);
-      console.log("Login success:", data);
+      await login(username, password);
       navigate("/");
     } catch (err) {
       console.log("ERRORRR", err);
