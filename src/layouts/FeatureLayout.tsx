@@ -16,9 +16,12 @@ export default function FeatureLayout({
   const navigate = useNavigate();
 
   return (
-    <div className={`bg-${bgColor}`}>
+    <div style={{ backgroundColor: bgColor }}>
       <div className="min-h-screen max-w-md m-auto">
-        <main className={`bg-[${bgColor}] min-h-screen h-full`}>
+        <main
+          className={`min-h-screen h-full`}
+          style={{ backgroundColor: bgColor }}
+        >
           <header className="bg-[#F05000] grid grid-cols-[1fr_2fr_1fr] justify-items-center px-4 py-5">
             <button
               onClick={() => navigate(-1)}

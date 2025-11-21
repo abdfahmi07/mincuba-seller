@@ -6,11 +6,38 @@
 }
 
 .ql-editor {
-  font-size: 16px;
+  font-size: 14px;
   min-height: 200px;
+  font-family: "Poppins", sans-serif !important;
+  background-color: white;
+}
+
+.ql-container.ql-snow {
+  border-bottom-left-radius: 0.4rem !important;
+  border-bottom-right-radius: 0.4rem !important;
+  overflow: hidden;
+}
+
+.ql-editor.ql-blank::before {
+  font-style: normal !important;
+}
+
+.ql-toolbar {
+  border-top-left-radius: 0.4rem;
+  border-top-right-radius: 0.4rem;
+  font-family: "Poppins", sans-serif !important;
 }
 
 .swal2-container {
   padding-left: 32px !important;
   padding-right: 32px !important;
+}
+
+.hide-scrollbar {
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }

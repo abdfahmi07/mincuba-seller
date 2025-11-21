@@ -16,6 +16,7 @@ const CreateProductPage = lazy(
 const EditProductPage = lazy(() => import("@/pages/Products/EditProductPage"));
 const OrdersPage = lazy(() => import("@/pages/Orders/OrdersPage"));
 const StorePage = lazy(() => import("@/pages/Store/StorePage"));
+const CreateStorePage = lazy(() => import("@/pages/Store/CreateStorePage"));
 const EditStorePage = lazy(() => import("@/pages/Store/EditStorePage"));
 
 export const router = createBrowserRouter([
@@ -44,6 +45,15 @@ export const router = createBrowserRouter([
           {
             index: true,
             element: <StorePage />,
+          },
+        ],
+      },
+      {
+        element: <MainLayout title="Buka Toko" />,
+        children: [
+          {
+            path: "create",
+            element: <CreateStorePage />,
           },
         ],
       },

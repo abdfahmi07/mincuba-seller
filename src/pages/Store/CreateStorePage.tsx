@@ -27,11 +27,10 @@ import "./style/index.css";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 // import type { FormStore } from "@/interface/IFormStore";
-import { updateStore } from "@/services/api/store";
+import { openStore } from "@/services/api/store";
 import { useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
-import { useStoreStatus } from "@/queries/useStoreStatus";
 
 const schemaValidationFormStore = Yup.object({
   name: Yup.string().required("Nama Toko wajib diisi"),
@@ -90,7 +89,7 @@ const schemaValidationFormStore = Yup.object({
 
 type FormStore = Yup.InferType<typeof schemaValidationFormStore>;
 
-export default function EditStorePage() {
+export default function CreateStorePage() {
   const [isShowMapFullScreen, setIsShowMapFullScreen] =
     useState<boolean>(false);
   const [position, setPosition] = useState<google.maps.LatLngLiteral | null>(
@@ -105,11 +104,12 @@ export default function EditStorePage() {
   const targetRef = useRef<google.maps.LatLngLiteral | null>(null);
   const animationFrame = useRef<number | null>(null);
   const autoCompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const currentUser = userStorage.get();
-  const navigate = useNavigate();
+  const [map, setMap] = useState<google.maps.Map | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const currentUser = userStorage.get();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -118,7 +118,6 @@ export default function EditStorePage() {
     handleSubmit,
     formState: { errors },
     setValue,
-    reset,
   } = useForm<FormStore>({
     resolver: yupResolver(schemaValidationFormStore),
     mode: "onChange",
@@ -153,8 +152,6 @@ export default function EditStorePage() {
     googleMapsApiKey: import.meta.env.VITE_API_KEY_GOOGLE_MAP,
     libraries: ["places"],
   });
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const { data: dataStore, isLoading: isLoadingStoreStatus } = useStoreStatus();
 
   const onLoad = useCallback(function callback(map: google.maps.Map) {
     setMap(map);
@@ -207,76 +204,58 @@ export default function EditStorePage() {
     animationFrame.current = requestAnimationFrame(animate);
   };
 
-  useEffect(() => {
-    if (isLoadingStoreStatus || !dataStore) return;
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    reset((prev) => ({
-      ...prev,
-      name: dataStore.data?.name ?? "",
-      phone: dataStore.data?.phone ?? "",
-      postalCode: dataStore.data?.Address.postal_code ?? "",
-      detailAddress: dataStore.data?.Address.detail ?? "",
-      guide: dataStore.data?.guide ?? "",
-      description: dataStore.data?.description ?? "",
-    }));
+    const previewUrl = URL.createObjectURL(file);
 
-    if (dataStore.data?.avatar_link) {
-      setAvatarPreview(dataStore.data?.avatar_link ?? "");
-    }
-
-    setPosition({
-      lat: dataStore.data?.Address.location.latitude ?? 0,
-      lng: dataStore.data?.Address.location.longitude ?? 0,
+    setAvatarPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return previewUrl;
     });
-  }, [isLoadingStoreStatus, dataStore, reset]);
+
+    setAvatarFile(file);
+  };
 
   useEffect(() => {
-    if (!dataStore || !provinces.length) return;
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
 
-    const currentProvince = provinces.find(
-      (p) => p.label === dataStore.data?.Address.province
-    );
+  const uploadImage = async (imageFile: File) => {
+    try {
+      const formData = new FormData();
+      formData.append("folder", "store");
+      formData.append("app", "mincuba");
+      formData.append("files", imageFile);
 
-    if (!currentProvince) return;
+      const response = await axios.put(
+        `${import.meta.env.VITE_API_MEDIA}/api/v1/media`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
-    setValue("province", currentProvince, { shouldValidate: true });
-  }, [dataStore, provinces, setValue]);
+      return response.data.data[0].url;
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        toast.error("Upload Gagal", {
+          position: "top-center",
+        });
+        return;
+      }
 
-  useEffect(() => {
-    if (!dataStore || !cities.length) return;
-
-    const currentCity = cities.find(
-      (c) => c.label === dataStore.data?.Address.city
-    );
-
-    if (!currentCity) return;
-
-    setValue("city", currentCity, { shouldValidate: true });
-  }, [dataStore, cities, setValue]);
-
-  useEffect(() => {
-    if (!dataStore || !districts.length) return;
-
-    const currentDistrict = districts.find(
-      (d) => d.label === dataStore.data?.Address.district
-    );
-
-    if (!currentDistrict) return;
-
-    setValue("district", currentDistrict, { shouldValidate: true });
-  }, [dataStore, districts, setValue]);
-
-  useEffect(() => {
-    if (!dataStore || !subDistricts.length) return;
-
-    const currentSubDistrict = subDistricts.find(
-      (s) => s.label === dataStore.data?.Address.sub_district
-    );
-
-    if (!currentSubDistrict) return;
-
-    setValue("subDistrict", currentSubDistrict, { shouldValidate: true });
-  }, [dataStore, subDistricts, setValue]);
+      toast.error("Terjadi kesalahan tak terduga", {
+        position: "top-center",
+      });
+      return null;
+    }
+  };
 
   const handlePlaceChanged = async () => {
     if (!autoCompleteRef.current) return;
@@ -310,6 +289,17 @@ export default function EditStorePage() {
 
     fetchCurrentAddress();
   }, [position, isLoaded, isAnimating]);
+
+  useEffect(() => {
+    getCurrentLocation()
+      .then(async (coords) => {
+        setPosition(coords);
+      })
+      .catch((err) => {
+        console.error("Failed to get current location:", err);
+        setPosition({ lat: -6.2, lng: 106.816666 });
+      });
+  }, []);
 
   const getProvinces = async () => {
     try {
@@ -486,62 +476,10 @@ export default function EditStorePage() {
 
   const handleChoosePinpoint = () => {
     setIsShowMapFullScreen(false);
+    // setDetailAddress(currentAddress ?? "");
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const previewUrl = URL.createObjectURL(file);
-
-    setAvatarPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return previewUrl;
-    });
-
-    setAvatarFile(file);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-    };
-  }, [avatarPreview]);
-
-  const uploadImage = async (imageFile: File) => {
-    try {
-      const formData = new FormData();
-      formData.append("folder", "store");
-      formData.append("app", "mincuba");
-      formData.append("files", imageFile);
-
-      const response = await axios.put(
-        `${import.meta.env.VITE_API_MEDIA}/api/v1/media`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      return response.data.data[0].url;
-    } catch (err: unknown) {
-      if (isAxiosError(err)) {
-        toast.error("Upload Gagal", {
-          position: "top-center",
-        });
-        return;
-      }
-
-      toast.error("Terjadi kesalahan tak terduga", {
-        position: "top-center",
-      });
-      return null;
-    }
-  };
-
-  const editStore: SubmitHandler<FormStore> = async (data) => {
+  const createOrOpenStore: SubmitHandler<FormStore> = async (data) => {
     try {
       const { subDistrict } = data;
       let uploadedImageUrl;
@@ -550,8 +488,8 @@ export default function EditStorePage() {
         uploadedImageUrl = await uploadImage(avatarFile);
       }
 
-      await updateStore({
-        avatarLink: uploadedImageUrl || avatarPreview,
+      await openStore({
+        avatarLink: uploadedImageUrl,
         code: subDistrict?.value,
         latLng: {
           lat: position?.lat ? position?.lat : 0,
@@ -590,7 +528,7 @@ export default function EditStorePage() {
     <div className="relative bg-white min-h-screen rounded-t-4xl font-poppins pt-4 pb-20 px-8">
       <form
         className="flex flex-col gap-y-4"
-        onSubmit={handleSubmit(editStore)}
+        onSubmit={handleSubmit(createOrOpenStore)}
       >
         <div className="relative mt-20 bg-[#F2F2F2] rounded-2xl p-6 flex items-center flex-col gap-y-5 ">
           <div className="absolute -top-14">

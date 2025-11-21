@@ -2,6 +2,8 @@ export interface MyStore {
   id: number;
   name: string;
   guide: string;
+  description: string;
+  avatar_link: string;
   phone: string;
   status: string;
   operational_hours: unknown;

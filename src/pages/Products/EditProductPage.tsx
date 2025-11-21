@@ -306,106 +306,8 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-y-4">
-          <label className="font-medium">Harga</label>
-          <div className="flex flex-col gap-y-2">
-            <div className="relative">
-              <span className="absolute left-0 bottom-3 text-[#B4B4B4] font-semibold">
-                Rp
-              </span>
-              <input
-                className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4] pl-7 w-full"
-                type="text"
-                placeholder="Harga"
-                {...register("price")}
-              />
-            </div>
-            {errors.price && (
-              <p className="text-xs text-red-500">{errors.price.message}</p>
-            )}
-            <p className="text-xs text-[#868686]">
-              Tentukan harga sesuai pasaran produkmu
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-y-4">
-          <label className="font-medium">Stok</label>
-          <div className="flex flex-col gap-y-2">
-            <input
-              className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4]"
-              type="text"
-              placeholder="Stok Tersedia"
-              {...register("stock")}
-            />
-            {errors.stock && (
-              <p className="text-xs text-red-500">{errors.stock.message}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-y-4">
-          <label className="font-medium">Min. Pesanan</label>
-          <div className="flex flex-col gap-y-2">
-            <input
-              className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4]"
-              type="text"
-              placeholder="Minimum Pesanan"
-              {...register("minOrder")}
-            />
-            {errors.minOrder && (
-              <p className="text-xs text-red-500">{errors.minOrder.message}</p>
-            )}
-          </div>
-        </div>
-
         <div className="flex flex-col gap-y-2">
-          <label className="font-medium">Kondisi</label>
-          <Controller
-            name="condition"
-            control={control}
-            render={({ field }) => {
-              return (
-                <Select
-                  unstyled
-                  className="w-full"
-                  classNames={{
-                    control: (state) =>
-                      `bg-white py-2 border-b-2
-                  ${state.isFocused ? "border-black/20" : "border-black/10"}
-                  outline-none`,
-                    valueContainer: () => "p-0",
-                    placeholder: () => "text-[#B4B4B4]",
-                    menu: () => "mt-2 bg-white rounded-lg shadow",
-                    option: ({ isSelected, isFocused }) =>
-                      `px-3 py-2 cursor-pointer 
-                ${isSelected ? "bg-[#F05000] text-white" : ""}
-                ${!isSelected && isFocused ? "bg-gray-100" : ""}`,
-                    indicatorsContainer: () => "flex items-center gap-2",
-                    clearIndicator: () =>
-                      "text-gray-400 hover:text-gray-600 cursor-pointer",
-                    dropdownIndicator: () =>
-                      "text-gray-400 hover:text-gray-600 cursor-pointer pr-1",
-                  }}
-                  components={{
-                    IndicatorSeparator: () => null,
-                  }}
-                  options={conditionOptions}
-                  onChange={(option) => field.onChange(option)}
-                  value={field.value}
-                  isClearable
-                  isSearchable
-                />
-              );
-            }}
-          />
-          {errors.condition && (
-            <p className="text-xs text-red-500">{errors.condition.message}</p>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-y-2">
-          <label className="font-medium">Unit</label>
+          <label className="font-medium">Satuan</label>
           <Controller
             name="unit"
             control={control}
@@ -448,8 +350,82 @@ export default function EditProductPage() {
             <p className="text-xs text-red-500">{errors.unit.message}</p>
           )}
         </div>
+
+        <div className="flex flex-col gap-y-4">
+          <label className="font-medium">Harga</label>
+          <div className="flex flex-col gap-y-2">
+            <div className="relative">
+              <span className="absolute left-0 bottom-3 text-[#B4B4B4] font-semibold">
+                Rp
+              </span>
+              <input
+                className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4] pl-7 w-full"
+                type="text"
+                placeholder="Harga"
+                {...register("price")}
+              />
+              {unitValue?.value === "liter" && (
+                <span className="absolute right-0 bottom-3 text-[#B4B4B4] font-semibold">
+                  / Liter
+                </span>
+              )}
+            </div>
+            {errors.price && (
+              <p className="text-xs text-red-500">{errors.price.message}</p>
+            )}
+            <p className="text-xs text-[#868686]">
+              Tentukan harga sesuai pasaran produkmu
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-y-4">
+          <label className="font-medium">Stok</label>
+          <div className="flex flex-col gap-y-2">
+            <div className="relative">
+              <input
+                className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4] w-full"
+                type="text"
+                placeholder="Stok Tersedia"
+                {...register("stock")}
+              />
+              {unitValue?.value === "liter" && (
+                <span className="absolute right-0 bottom-3 text-[#B4B4B4] font-semibold">
+                  Liter
+                </span>
+              )}
+              {errors.stock && (
+                <p className="text-xs text-red-500">{errors.stock.message}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-y-4">
+          <label className="font-medium">Min. Pesanan</label>
+          <div className="flex flex-col gap-y-2">
+            <div className="relative">
+              <input
+                className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4] w-full"
+                type="text"
+                placeholder="Minimum Pesanan"
+                {...register("minOrder")}
+              />
+              {unitValue?.value === "liter" && (
+                <span className="absolute right-0 bottom-3 text-[#B4B4B4] font-semibold">
+                  Liter
+                </span>
+              )}
+              {errors.minOrder && (
+                <p className="text-xs text-red-500">
+                  {errors.minOrder.message}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
         <div className="flex flex-col gap-y-4 w-fit">
-          <label className="font-medium">Tentukan berat pengirimanmu</label>
+          <label className="font-medium">Tentukan berat satuan</label>
           <div className="flex flex-col gap-y-2">
             <div className="relative w-40 border-b-2 border-black/10">
               <input

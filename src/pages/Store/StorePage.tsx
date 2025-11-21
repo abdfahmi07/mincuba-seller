@@ -1,88 +1,57 @@
 import { ChevronRight, Package, Pencil, Store } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { isAxiosError } from "axios";
-import { toast } from "react-toastify";
-import { getMyStore } from "@/services/api/store";
-import { useEffect, useState } from "react";
-import type { MyStore } from "@/interface/IMyStore";
 import Skeleton from "react-loading-skeleton";
+import { useStoreStatus } from "@/queries/useStoreStatus";
 import "react-loading-skeleton/dist/skeleton.css";
 
 export default function StorePage() {
-  const [store, setStore] = useState<MyStore | null>(null);
-  const [isLoadingStore, setIsLoadingStore] = useState<boolean>(true);
-
-  const fetchMyStore = async () => {
-    try {
-      const data = await getMyStore();
-      setStore(data);
-      setIsLoadingStore(false);
-    } catch (err: unknown) {
-      setIsLoadingStore(false);
-      if (isAxiosError(err)) {
-        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
-          position: "top-center",
-        });
-        return;
-      }
-
-      toast.error("Terjadi kesalahan tak terduga", {
-        position: "top-center",
-      });
-    }
-  };
-
-  useEffect(() => {
-    fetchMyStore();
-    return () => {};
-  }, []);
+  const { data: dataStore, isLoading: isLoadingStoreStatus } = useStoreStatus();
 
   return (
     <div className="relative bg-white min-h-screen rounded-t-4xl font-poppins px-6 py-12 mt-8">
       <div className="flex justify-center items-center absolute -top-10 right-0 left-0 m-auto">
         <div className="relative w-26">
-          {isLoadingStore ? (
+          {isLoadingStoreStatus ? (
             <div className="w-26 h-26 rounded-full border-4 border-white bg-gray-400 animate-pulse"></div>
+          ) : dataStore?.data?.avatar_link ? (
+            <img
+              src={dataStore?.data?.avatar_link}
+              alt="Avatar Store"
+              className="w-26 h-26 rounded-full object-cover"
+            />
           ) : (
             <div className="w-26 h-26 flex justify-center items-center text-white rounded-full bg-[#F05000] border-4 border-white">
               <h3 className="uppercase text-3xl font-semibold">
-                {store?.User.username.includes(" ")
-                  ? `${store?.User.username.split(" ")[0][0]}${
-                      store?.User.username.split(" ")[1][0]
+                {dataStore?.data?.User.username.includes(" ")
+                  ? `${dataStore?.data?.User.username.split(" ")[0][0]}${
+                      dataStore?.data?.User.username.split(" ")[1][0]
                     }`
-                  : `${store?.User.username[0]}${store?.User.username[1]}`}
+                  : `${dataStore?.data?.User.username[0]}${dataStore?.data?.User.username[1]}`}
               </h3>
             </div>
           )}
-
-          {/* <img
-            className="rounded-full border-4 border-white w-full"
-            src={user}
-            alt="User"
-          /> */}
-          {/* <div className="absolute bottom-1 p-0.5 right-1 bg-white border border-white rounded-full">
-            <Camera color="#000" size={16} />
-          </div> */}
         </div>
       </div>
       <div className="flex flex-col gap-y-1.5 p-4 mt-3">
-        {isLoadingStore ? (
+        {isLoadingStoreStatus ? (
           <div className="px-10">
             <Skeleton />
           </div>
         ) : (
           <div className="flex justify-center items-center gap-x-1">
             <Store color="#f05000" size={17} />
-            <h6 className="text-center font-semibold">{store?.name}</h6>
+            <h6 className="text-center font-semibold">
+              {dataStore?.data?.name}
+            </h6>
           </div>
         )}
-        {isLoadingStore ? (
+        {isLoadingStoreStatus ? (
           <div className="px-10">
             <Skeleton count={2} />
           </div>
         ) : (
-          <p className="text-sm text-center w-[90%] m-auto">
-            {`${store?.Address.detail}, ${store?.Address.sub_district}, ${store?.Address.district}, ${store?.Address.city}, ${store?.Address.province}, ${store?.Address.postal_code}`}
+          <p className="text-sm text-center m-auto">
+            {`${dataStore?.data?.Address.detail}, ${dataStore?.data?.Address.sub_district}, ${dataStore?.data?.Address.district}, ${dataStore?.data?.Address.city}, ${dataStore?.data?.Address.province}, ${dataStore?.data?.Address.postal_code}`}
           </p>
         )}
       </div>

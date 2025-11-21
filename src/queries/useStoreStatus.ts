@@ -23,11 +23,12 @@ export function useStoreStatus() {
         );
 
         if ((data as StoreNotFound).status === 404) {
-          return { exists: false, isOpen: false, updatedAt: null };
+          return { data: null, exists: false, isOpen: false, updatedAt: null };
         }
 
         const ok = data as StoreFound;
         return {
+          data: ok.result,
           exists: true,
           isOpen: !!ok.result.status,
           updatedAt: ok.result.updated_at ?? null,
@@ -35,6 +36,7 @@ export function useStoreStatus() {
       } catch (err: unknown) {
         if (axios.isAxiosError(err) && err.response?.status === 404) {
           return {
+            data: null,
             exists: false,
             isOpen: false,
             updatedAt: null,

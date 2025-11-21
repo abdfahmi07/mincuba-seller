@@ -2,12 +2,14 @@ import CardOrder from "@/components/Card/CardOrder";
 import { useStoreStatus } from "@/queries/useStoreStatus";
 import closedStore from "@/assets/images/icon/store-closed.png";
 import NotFound from "@/components/NotFound/NotFound";
+import Tabs from "@/components/Tabs/Tabs";
 
 export default function OrdersPage() {
   const { data } = useStoreStatus();
 
   return (
     <>
+      <Tabs />
       {data?.exists ? (
         <div className="grid grid-cols-1 gap-3 p-4 mb-20">
           <CardOrder isIncomingOrder={true} />
