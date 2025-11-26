@@ -11,6 +11,7 @@ export interface Product {
   product_category_id: unknown;
   Category: unknown;
   store_id: number;
+  active: boolean;
   Store: unknown;
   ProductImage: ProductImage[];
   created_at: string;
@@ -26,13 +27,14 @@ export interface ProductImage {
 }
 
 export interface ProductPayload {
-  name: string;
-  description: string;
-  price: number;
-  condition: string;
-  unit: string;
-  weight: number;
-  min: number;
-  stock: number;
-  images: string[];
+  name?: string;
+  description?: string;
+  price?: number;
+  condition?: string;
+  unit?: string;
+  weight?: number;
+  min?: number;
+  active?: boolean;
+  stock?: number;
+  images?: string[];
 }

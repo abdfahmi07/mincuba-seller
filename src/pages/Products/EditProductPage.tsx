@@ -1,27 +1,68 @@
 import MultipleImageUpload from "@/components/MultipleImageUploader/MultipleImageUploader";
 import type { PreviewImage } from "@/interface/IPreviewImage";
+import type { Option } from "@/interface/ISelectOption";
+import type { Product, ProductImage } from "@/interface/IProduct";
+
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Controller, useForm } from "react-hook-form";
 import * as Yup from "yup";
 import ReactQuill from "react-quill-new";
 import Select from "react-select";
 import "react-quill-new/dist/quill.snow.css";
-import type { Option } from "@/interface/ISelectOption";
 import axios, { isAxiosError } from "axios";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import { getProductById, updateProduct } from "@/services/api/product";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect } from "react";
-import type { Product, ProductImage } from "@/interface/IProduct";
+import { useEffect, type ChangeEvent } from "react";
+import {
+  formatNumberWithDots,
+  ONLY_DOT_NUMBER_REGEX,
+  parseFormattedNumber,
+} from "@/helpers/number";
 
-const schemaValidationCreateProduct = Yup.object({
+const schemaValidationEditProduct = Yup.object({
   images: Yup.array()
     .min(1, "Foto produk wajib diisi")
     .required("Foto produk wajib diisi"),
   name: Yup.string().required("Nama wajib diisi"),
-  price: Yup.string().required("Harga wajib diisi"),
-  stock: Yup.string().required("Stok wajib diisi"),
-  minOrder: Yup.string().required("Min. pemesanan wajib diisi"),
+  price: Yup.string()
+    .required("Harga wajib diisi")
+    .test("only-number", "Harga harus berupa angka", (value) => {
+      if (!value) return false;
+      const cleaned = value.replace(/\s/g, "");
+      return ONLY_DOT_NUMBER_REGEX.test(cleaned);
+    }),
+  stock: Yup.string()
+    .required("Stok wajib diisi")
+    .test("only-number", "Stok harus berupa angka", (value) => {
+      if (!value) return false;
+      const cleaned = value.replace(/\s/g, "");
+      return ONLY_DOT_NUMBER_REGEX.test(cleaned);
+    })
+    .test(
+      "stock-minOrder",
+      "Stok harus minimal 2× jumlah Min. Pemesanan",
+      function (value) {
+        const stockNumber = parseFormattedNumber(value);
+        const minOrderNumber = parseFormattedNumber(this.parent.minOrder);
+        const unitValue = this.parent.unit?.value; // misal: "gram" / "liter"
+
+        if (!stockNumber || !minOrderNumber) return true;
+
+        if (unitValue === "liter") {
+          return stockNumber >= minOrderNumber * 2;
+        }
+
+        return true;
+      }
+    ),
+  minOrder: Yup.string()
+    .required("Min. pemesanan wajib diisi")
+    .test("only-number", "Min. pemesanan harus berupa angka", (value) => {
+      if (!value) return false;
+      const cleaned = value.replace(/\s/g, "");
+      return ONLY_DOT_NUMBER_REGEX.test(cleaned);
+    }),
   description: Yup.string()
     .test("desc-required", "Deskripsi wajib diisi", (value) => {
       if (!value) return false;
@@ -34,7 +75,13 @@ const schemaValidationCreateProduct = Yup.object({
       return plainText.length > 0;
     })
     .required("Deskripsi wajib diisi"),
-  weight: Yup.string().required("Berat wajib diisi"),
+  weight: Yup.string()
+    .required("Berat wajib diisi")
+    .test("only-number", "Berat harus berupa angka", (value) => {
+      if (!value) return false;
+      const cleaned = value.replace(/\s/g, "");
+      return ONLY_DOT_NUMBER_REGEX.test(cleaned);
+    }),
   condition: Yup.object({
     value: Yup.string(),
     label: Yup.string(),
@@ -57,9 +104,7 @@ const schemaValidationCreateProduct = Yup.object({
     ),
 }).required();
 
-type CreateProductFormValues = Yup.InferType<
-  typeof schemaValidationCreateProduct
->;
+type EditProductFormValues = Yup.InferType<typeof schemaValidationEditProduct>;
 
 const modules = {
   toolbar: [
@@ -75,6 +120,7 @@ const formats = ["bold", "italic", "underline", "list", "bullet", "link"];
 export default function EditProductPage() {
   const { productId } = useParams();
   const navigate = useNavigate();
+
   const conditionOptions: Option[] = [
     {
       label: "Baru",
@@ -96,15 +142,17 @@ export default function EditProductPage() {
       value: "grams",
     },
   ];
+
   const {
     register,
     control,
     handleSubmit,
     watch,
     reset,
+    setValue,
     formState: { errors },
-  } = useForm<CreateProductFormValues>({
-    resolver: yupResolver(schemaValidationCreateProduct),
+  } = useForm<EditProductFormValues>({
+    resolver: yupResolver(schemaValidationEditProduct),
     mode: "onSubmit",
     reValidateMode: "onChange",
     defaultValues: {
@@ -121,6 +169,19 @@ export default function EditProductPage() {
   });
 
   const unitValue = watch("unit");
+  const priceValue = watch("price");
+  const stockValue = watch("stock");
+  const minOrderValue = watch("minOrder");
+  const weightValue = watch("weight");
+
+  // Handler general untuk input angka
+  const handleNumericChange = (
+    e: ChangeEvent<HTMLInputElement>,
+    fieldName: "price" | "stock" | "minOrder" | "weight"
+  ) => {
+    const formatted = formatNumberWithDots(e.target.value);
+    setValue(fieldName, formatted, { shouldValidate: true });
+  };
 
   const uploadImage = async (imageFile: File) => {
     try {
@@ -159,12 +220,13 @@ export default function EditProductPage() {
     const uploadPromises = files.map((file) => uploadImage(file));
     const results = await Promise.all(uploadPromises);
 
-    return results.filter((url) => url);
+    return results.filter((url): url is string => Boolean(url));
   };
 
   const getDetailProduct = async () => {
     try {
       const resultData: Product = await getProductById(productId ?? "");
+
       const formattedImages: PreviewImage[] = resultData.ProductImage.map(
         (image: ProductImage) => {
           const splittedUrl = image.url.split("/");
@@ -176,16 +238,18 @@ export default function EditProductPage() {
               name: pathName,
             },
             url: image.url,
-          };
+          } as PreviewImage;
         }
       );
+
       reset(
         {
           images: formattedImages,
           name: resultData.name,
-          price: resultData.price,
-          stock: resultData.stock.toString(),
-          minOrder: resultData.min.toString(),
+          // backend mungkin kirim number/string tanpa titik -> kita format
+          price: formatNumberWithDots(String(resultData.price)),
+          stock: formatNumberWithDots(String(resultData.stock)),
+          minOrder: formatNumberWithDots(String(resultData.min)),
           description: resultData.description,
           condition:
             conditionOptions.find(
@@ -194,7 +258,7 @@ export default function EditProductPage() {
           unit:
             unitOptions.find((option) => option.value === resultData.unit) ??
             null,
-          weight: resultData.weight,
+          weight: formatNumberWithDots(String(resultData.weight)),
         },
         {
           keepDirty: true,
@@ -203,7 +267,7 @@ export default function EditProductPage() {
       );
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+        toast.error(err.response?.data?.result?.error ?? "Terjadi kesalahan", {
           position: "top-center",
         });
         return;
@@ -220,7 +284,7 @@ export default function EditProductPage() {
     return () => {};
   }, [productId]);
 
-  const editProduct = async (data: CreateProductFormValues) => {
+  const editProduct = async (data: EditProductFormValues) => {
     try {
       const imageFiles = data.images
         .filter((image: PreviewImage) => image.file instanceof File)
@@ -237,19 +301,20 @@ export default function EditProductPage() {
       const payload = {
         name: data.name,
         description: data.description,
-        price: parseInt(data.price),
+        price: parseFormattedNumber(data.price),
         condition: data.condition?.value ?? "",
         unit: data.unit?.value ?? "",
-        weight: parseInt(data.weight),
-        min: parseInt(data.minOrder),
-        stock: parseInt(data.stock),
+        weight: parseFormattedNumber(data.weight),
+        min: parseFormattedNumber(data.minOrder),
+        stock: parseFormattedNumber(data.stock),
         images: imagesUrls,
       };
+
       await updateProduct(productId ?? "", payload);
       navigate("/products");
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+        toast.error(err.response?.data?.result?.error ?? "Terjadi kesalahan", {
           position: "top-center",
         });
         return;
@@ -267,7 +332,8 @@ export default function EditProductPage() {
         className="flex flex-col gap-y-6"
         onSubmit={handleSubmit(editProduct)}
       >
-        <div className="flex flex-col gap-y-3">
+        {/* Foto Produk */}
+        <div className="flex flex-col gap-y-3 text-sm">
           <label className="font-medium">Foto Produk</label>
           <Controller
             name="images"
@@ -288,7 +354,8 @@ export default function EditProductPage() {
           />
         </div>
 
-        <div className="flex flex-col gap-y-4">
+        {/* Nama Produk */}
+        <div className="flex flex-col gap-y-4 text-sm">
           <label className="font-medium">Isi nama produk yang kamu jual</label>
           <div className="flex flex-col gap-y-2">
             <input
@@ -306,7 +373,8 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-y-2">
+        {/* Satuan */}
+        <div className="flex flex-col gap-y-2 text-sm">
           <label className="font-medium">Satuan</label>
           <Controller
             name="unit"
@@ -351,7 +419,8 @@ export default function EditProductPage() {
           )}
         </div>
 
-        <div className="flex flex-col gap-y-4">
+        {/* Harga */}
+        <div className="flex flex-col gap-y-4 text-sm">
           <label className="font-medium">Harga</label>
           <div className="flex flex-col gap-y-2">
             <div className="relative">
@@ -362,7 +431,9 @@ export default function EditProductPage() {
                 className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4] pl-7 w-full"
                 type="text"
                 placeholder="Harga"
+                value={priceValue}
                 {...register("price")}
+                onChange={(e) => handleNumericChange(e, "price")}
               />
               {unitValue?.value === "liter" && (
                 <span className="absolute right-0 bottom-3 text-[#B4B4B4] font-semibold">
@@ -379,7 +450,8 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-y-4">
+        {/* Stok */}
+        <div className="flex flex-col gap-y-4 text-sm">
           <label className="font-medium">Stok</label>
           <div className="flex flex-col gap-y-2">
             <div className="relative">
@@ -387,21 +459,24 @@ export default function EditProductPage() {
                 className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4] w-full"
                 type="text"
                 placeholder="Stok Tersedia"
+                value={stockValue}
                 {...register("stock")}
+                onChange={(e) => handleNumericChange(e, "stock")}
               />
               {unitValue?.value === "liter" && (
                 <span className="absolute right-0 bottom-3 text-[#B4B4B4] font-semibold">
                   Liter
                 </span>
               )}
-              {errors.stock && (
-                <p className="text-xs text-red-500">{errors.stock.message}</p>
-              )}
             </div>
+            {errors.stock && (
+              <p className="text-xs text-red-500">{errors.stock.message}</p>
+            )}
           </div>
         </div>
 
-        <div className="flex flex-col gap-y-4">
+        {/* Min. Pesanan */}
+        <div className="flex flex-col gap-y-4 text-sm">
           <label className="font-medium">Min. Pesanan</label>
           <div className="flex flex-col gap-y-2">
             <div className="relative">
@@ -409,30 +484,34 @@ export default function EditProductPage() {
                 className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4] w-full"
                 type="text"
                 placeholder="Minimum Pesanan"
+                value={minOrderValue}
                 {...register("minOrder")}
+                onChange={(e) => handleNumericChange(e, "minOrder")}
               />
               {unitValue?.value === "liter" && (
                 <span className="absolute right-0 bottom-3 text-[#B4B4B4] font-semibold">
                   Liter
                 </span>
               )}
-              {errors.minOrder && (
-                <p className="text-xs text-red-500">
-                  {errors.minOrder.message}
-                </p>
-              )}
             </div>
+            {errors.minOrder && (
+              <p className="text-xs text-red-500">{errors.minOrder.message}</p>
+            )}
           </div>
         </div>
-        <div className="flex flex-col gap-y-4 w-fit">
+
+        {/* Berat */}
+        <div className="flex flex-col gap-y-4 w-fit text-sm">
           <label className="font-medium">Tentukan berat satuan</label>
           <div className="flex flex-col gap-y-2">
             <div className="relative w-40 border-b-2 border-black/10">
               <input
                 className="outline-none py-2 placeholder:text-[#B4B4B4] w-[65%]"
-                type="number"
+                type="text"
                 placeholder="Berat"
+                value={weightValue}
                 {...register("weight")}
+                onChange={(e) => handleNumericChange(e, "weight")}
               />
               <span className="absolute right-0 bottom-2 text-[#B4B4B4] font-semibold bg-white">
                 {unitValue?.label}
@@ -443,7 +522,9 @@ export default function EditProductPage() {
             )}
           </div>
         </div>
-        <div className="flex flex-col gap-y-4">
+
+        {/* Deskripsi */}
+        <div className="flex flex-col gap-y-4 text-sm">
           <label className="font-medium">Tulis deskripsi produk kamu</label>
           <div className="flex flex-col gap-y-2">
             <Controller
@@ -474,6 +555,7 @@ export default function EditProductPage() {
           </div>
         </div>
 
+        {/* Button submit */}
         <button
           type="submit"
           className="w-full py-3 rounded-lg text-white font-semibold bg-[#F05000]"
@@ -481,6 +563,7 @@ export default function EditProductPage() {
           Simpan
         </button>
       </form>
+      <ToastContainer hideProgressBar />
     </div>
   );
 }

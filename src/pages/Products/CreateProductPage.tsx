@@ -1,38 +1,66 @@
 import MultipleImageUpload from "@/components/MultipleImageUploader/MultipleImageUploader";
-import type { PreviewImage } from "@/interface/IPreviewImage";
+import type { FileObj, PreviewImage } from "@/interface/IPreviewImage";
+import type { Option } from "@/interface/ISelectOption";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Controller, useForm } from "react-hook-form";
 import * as Yup from "yup";
 import ReactQuill from "react-quill-new";
 import Select from "react-select";
 import "react-quill-new/dist/quill.snow.css";
-import type { Option } from "@/interface/ISelectOption";
 import axios, { isAxiosError } from "axios";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import { createProduct } from "@/services/api/product";
 import { useNavigate } from "react-router-dom";
+import type { ChangeEvent } from "react";
+import {
+  formatNumberWithDots,
+  ONLY_DOT_NUMBER_REGEX,
+  parseFormattedNumber,
+} from "@/helpers/number";
 
 const schemaValidationCreateProduct = Yup.object({
   images: Yup.array()
     .min(1, "Foto produk wajib diisi")
     .required("Foto produk wajib diisi"),
   name: Yup.string().required("Nama wajib diisi"),
-  price: Yup.string().required("Harga wajib diisi"),
-  stock: Yup.number()
-    .typeError("Stok harus berupa angka")
+  price: Yup.string()
+    .required("Harga wajib diisi")
+    .test("only-number", "Harga harus berupa angka", (value) => {
+      if (!value) return false;
+      const cleaned = value.replace(/\s/g, "");
+      return ONLY_DOT_NUMBER_REGEX.test(cleaned);
+    }),
+  stock: Yup.string()
     .required("Stok wajib diisi")
+    .test("only-number", "Stok harus berupa angka", (value) => {
+      if (!value) return false;
+      const cleaned = value.replace(/\s/g, "");
+      return ONLY_DOT_NUMBER_REGEX.test(cleaned);
+    })
     .test(
       "stock-minOrder",
       "Stok harus minimal 2× jumlah Min. Pemesanan",
       function (value) {
-        const minOrder = Number(this.parent.minOrder);
+        const stockNumber = parseFormattedNumber(value);
+        const minOrderNumber = parseFormattedNumber(this.parent.minOrder);
+        const unitValue = this.parent.unit?.value; // misal: "gram" / "liter"
 
-        if (!value || !minOrder) return true;
+        if (!stockNumber || !minOrderNumber) return true;
 
-        return value >= minOrder * 2;
+        if (unitValue === "liter") {
+          return stockNumber >= minOrderNumber * 2;
+        }
+
+        return true;
       }
     ),
-  minOrder: Yup.string().required("Min. pemesanan wajib diisi"),
+  minOrder: Yup.string()
+    .required("Min. pemesanan wajib diisi")
+    .test("only-number", "Min. pemesanan harus berupa angka", (value) => {
+      if (!value) return false;
+      const cleaned = value.replace(/\s/g, "");
+      return ONLY_DOT_NUMBER_REGEX.test(cleaned);
+    }),
   description: Yup.string()
     .test("desc-required", "Deskripsi wajib diisi", (value) => {
       if (!value) return false;
@@ -45,7 +73,13 @@ const schemaValidationCreateProduct = Yup.object({
       return plainText.length > 0;
     })
     .required("Deskripsi wajib diisi"),
-  weight: Yup.string().required("Berat wajib diisi"),
+  weight: Yup.string()
+    .required("Berat wajib diisi")
+    .test("only-number", "Berat harus berupa angka", (value) => {
+      if (!value) return false;
+      const cleaned = value.replace(/\s/g, "");
+      return ONLY_DOT_NUMBER_REGEX.test(cleaned);
+    }),
   condition: Yup.object({
     value: Yup.string(),
     label: Yup.string(),
@@ -85,6 +119,7 @@ const formats = ["bold", "italic", "underline", "list", "bullet", "link"];
 
 export default function CreateProductPage() {
   const navigate = useNavigate();
+
   const conditionOptions: Option[] = [
     {
       label: "Baru",
@@ -106,11 +141,13 @@ export default function CreateProductPage() {
       value: "grams",
     },
   ];
+
   const {
     register,
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CreateProductFormValues>({
     resolver: yupResolver(schemaValidationCreateProduct),
@@ -120,7 +157,7 @@ export default function CreateProductPage() {
       images: [],
       name: "",
       price: "",
-      stock: 0,
+      stock: "",
       minOrder: "",
       description: "",
       weight: "",
@@ -130,6 +167,19 @@ export default function CreateProductPage() {
   });
 
   const unitValue = watch("unit");
+  const priceValue = watch("price");
+  const stockValue = watch("stock");
+  const minOrderValue = watch("minOrder");
+  const weightValue = watch("weight");
+
+  // Handler buat semua input angka (price, stock, minOrder, weight)
+  const handleNumericChange = (
+    e: ChangeEvent<HTMLInputElement>,
+    fieldName: "price" | "stock" | "minOrder" | "weight"
+  ) => {
+    const formatted = formatNumberWithDots(e.target.value);
+    setValue(fieldName, formatted, { shouldValidate: true });
+  };
 
   const uploadImage = async (imageFile: File) => {
     try {
@@ -164,35 +214,36 @@ export default function CreateProductPage() {
     }
   };
 
-  const uploadAllImages = async (files: File[]) => {
-    const uploadPromises = files.map((file) => uploadImage(file));
+  const uploadAllImages = async (files: (File | FileObj)[]) => {
+    const uploadPromises = files.map((file) => uploadImage(file as File));
     const results = await Promise.all(uploadPromises);
 
-    return results.filter((url) => url);
+    return results.filter((url): url is string => Boolean(url));
   };
 
   const addProduct = async (data: CreateProductFormValues) => {
     try {
-      const imageFiles = data.images.map((image) => image.file);
+      const imageFiles = data.images.map((image: PreviewImage) => image.file);
 
       const uploadedImageUrls = await uploadAllImages(imageFiles);
 
       const payload = {
         name: data.name,
         description: data.description,
-        price: parseInt(data.price),
+        price: parseFormattedNumber(data.price),
         condition: data.condition?.value ?? "",
         unit: data.unit?.value ?? "",
-        weight: parseInt(data.weight),
-        min: parseInt(data.minOrder),
-        stock: data.stock,
+        weight: parseFormattedNumber(data.weight),
+        min: parseFormattedNumber(data.minOrder),
+        stock: parseFormattedNumber(data.stock),
         images: uploadedImageUrls,
       };
+
       await createProduct(payload);
       navigate("/products");
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+        toast.error(err.response?.data?.result?.error ?? "Terjadi kesalahan", {
           position: "top-center",
         });
         return;
@@ -210,6 +261,7 @@ export default function CreateProductPage() {
         className="flex flex-col gap-y-6"
         onSubmit={handleSubmit(addProduct)}
       >
+        {/* Foto Produk */}
         <div className="flex flex-col gap-y-3 text-sm">
           <label className="font-medium">Foto Produk</label>
           <Controller
@@ -231,6 +283,7 @@ export default function CreateProductPage() {
           />
         </div>
 
+        {/* Nama Produk */}
         <div className="flex flex-col gap-y-4 text-sm">
           <label className="font-medium">Isi nama produk yang kamu jual</label>
           <div className="flex flex-col gap-y-2">
@@ -249,6 +302,7 @@ export default function CreateProductPage() {
           </div>
         </div>
 
+        {/* Satuan */}
         <div className="flex flex-col gap-y-2 text-sm">
           <label className="font-medium">Satuan</label>
           <Controller
@@ -294,6 +348,7 @@ export default function CreateProductPage() {
           )}
         </div>
 
+        {/* Harga */}
         <div className="flex flex-col gap-y-4 text-sm">
           <label className="font-medium">Harga</label>
           <div className="flex flex-col gap-y-2">
@@ -305,7 +360,9 @@ export default function CreateProductPage() {
                 className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4] pl-7 w-full"
                 type="text"
                 placeholder="Harga"
+                value={priceValue}
                 {...register("price")}
+                onChange={(e) => handleNumericChange(e, "price")}
               />
               {unitValue?.value === "liter" && (
                 <span className="absolute right-0 bottom-3 text-[#B4B4B4] font-semibold">
@@ -322,6 +379,7 @@ export default function CreateProductPage() {
           </div>
         </div>
 
+        {/* Stok */}
         <div className="flex flex-col gap-y-4 text-sm">
           <label className="font-medium">Stok</label>
           <div className="flex flex-col gap-y-2">
@@ -330,7 +388,9 @@ export default function CreateProductPage() {
                 className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4] w-full"
                 type="text"
                 placeholder="Stok Tersedia"
+                value={stockValue}
                 {...register("stock")}
+                onChange={(e) => handleNumericChange(e, "stock")}
               />
               {unitValue?.value === "liter" && (
                 <span className="absolute right-0 bottom-3 text-[#B4B4B4] font-semibold">
@@ -344,6 +404,7 @@ export default function CreateProductPage() {
           </div>
         </div>
 
+        {/* Min. Pesanan */}
         <div className="flex flex-col gap-y-4 text-sm">
           <label className="font-medium">Min. Pesanan</label>
           <div className="flex flex-col gap-y-2">
@@ -352,7 +413,9 @@ export default function CreateProductPage() {
                 className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4] w-full"
                 type="text"
                 placeholder="Minimum Pesanan"
+                value={minOrderValue}
                 {...register("minOrder")}
+                onChange={(e) => handleNumericChange(e, "minOrder")}
               />
               {unitValue?.value === "liter" && (
                 <span className="absolute right-0 bottom-3 text-[#B4B4B4] font-semibold">
@@ -366,15 +429,18 @@ export default function CreateProductPage() {
           </div>
         </div>
 
+        {/* Berat */}
         <div className="flex flex-col gap-y-4 w-fit text-sm">
           <label className="font-medium">Tentukan berat satuan</label>
           <div className="flex flex-col gap-y-2">
             <div className="relative w-40 border-b-2 border-black/10">
               <input
                 className="outline-none py-2 placeholder:text-[#B4B4B4] w-[65%]"
-                type="number"
+                type="text"
                 placeholder="Berat"
+                value={weightValue}
                 {...register("weight")}
+                onChange={(e) => handleNumericChange(e, "weight")}
               />
               <span className="absolute right-0 bottom-2 text-[#B4B4B4] font-semibold bg-white">
                 {unitValue?.label}
@@ -385,6 +451,8 @@ export default function CreateProductPage() {
             )}
           </div>
         </div>
+
+        {/* Deskripsi */}
         <div className="flex flex-col gap-y-4 text-sm">
           <label className="font-medium">Tulis deskripsi produk kamu</label>
           <div className="flex flex-col gap-y-2">
@@ -419,6 +487,7 @@ export default function CreateProductPage() {
           </div>
         </div>
 
+        {/* Button submit */}
         <button
           type="submit"
           className="w-full py-3 rounded-lg text-white font-semibold bg-[#F05000] text-sm"
@@ -426,6 +495,7 @@ export default function CreateProductPage() {
           Tambahkan
         </button>
       </form>
+      <ToastContainer hideProgressBar />
     </div>
   );
 }

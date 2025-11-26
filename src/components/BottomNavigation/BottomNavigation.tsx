@@ -1,5 +1,5 @@
 import home from "@/assets/images/icon/home.png";
-import notification from "@/assets/images/icon/notification.png";
+import courier from "@/assets/images/icon/courier.svg";
 import trolley from "@/assets/images/icon/trolley.png";
 import box from "@/assets/images/icon/box.png";
 import { NavLink } from "react-router-dom";
@@ -17,16 +17,21 @@ export default function BottomNavigation() {
             <h6>Home</h6>
           </NavLink>
         </li>
-        <li className="flex flex-col items-center text-xs text-white gap-y-1.5 ">
-          <img className="w-8" src={notification} alt="Notif Icon" />
-          <h6>Notification</h6>
+        <li>
+          <NavLink
+            to="/couriers"
+            className="flex flex-col items-center text-xs text-white gap-y-1.5 "
+          >
+            <img className="w-8" src={courier} alt="Courier Icon" />
+            <h6>Kurir</h6>
+          </NavLink>
         </li>
         <li className="">
           <NavLink
             to="/orders"
             className="flex flex-col items-center text-xs text-white gap-y-1.5 "
           >
-            <img className="w-8" src={trolley} alt="Pesanan Icon" />
+            <img className="w-8" src={trolley} alt="Order Icon" />
             <h6>Pesanan</h6>
           </NavLink>
         </li>
@@ -35,7 +40,7 @@ export default function BottomNavigation() {
             className="flex flex-col items-center text-xs text-white gap-y-1.5"
             to="/products"
           >
-            <img className="w-8" src={box} alt="Produk Icon" />
+            <img className="w-8" src={box} alt="Product Icon" />
             <h6>Produk</h6>
           </NavLink>
         </li>

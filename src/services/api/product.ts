@@ -1,11 +1,13 @@
 import type { ProductPayload } from "@/interface/IProduct";
 import api from "./axios";
 
-export const getAllProduct = async () => {
+const LIMIT = 10;
+
+export const getAllProduct = async (page: number) => {
   const { data } = await api.get("/product/seller/get", {
     params: {
-      page: 1,
-      limit: 100,
+      page,
+      limit: LIMIT,
     },
   });
 

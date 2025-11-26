@@ -3,7 +3,7 @@ import type { CardCourier } from "@/interface/ICardCourier";
 export default function CardCourier({ courier }: CardCourier) {
   return (
     <div className="border border-[#E9E9E9] bg-[#FBFBFB] rounded-2xl p-4 grid grid-cols-[1fr_minmax(110px,140px)_auto] items-center gap-2.5">
-      <h5 className="font-medium">{courier.name}</h5>
+      <h5 className="text-base font-semibold">{courier.name}</h5>
 
       <div
         className={`${

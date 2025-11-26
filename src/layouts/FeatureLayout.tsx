@@ -5,10 +5,12 @@ import { useStoreStatus } from "@/queries/useStoreStatus";
 
 export default function FeatureLayout({
   title,
+  navigateTo,
   isIcon = false,
   bgColor = "#fff",
 }: {
   title: string;
+  navigateTo?: string;
   isIcon?: boolean;
   bgColor?: string;
 }) {
@@ -33,12 +35,11 @@ export default function FeatureLayout({
               {title}
             </h4>
             {isIcon && data?.exists && (
-              <NavLink to="/products/create" className="justify-self-end">
+              <NavLink to={navigateTo || "/"} className="justify-self-end">
                 <Plus color="#fff" strokeWidth={3} />
               </NavLink>
             )}
           </header>
-
           <div className="">
             <Outlet />
           </div>

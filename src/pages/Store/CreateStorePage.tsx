@@ -9,7 +9,7 @@ import {
 } from "@react-google-maps/api";
 import { getAddressFromLatLng, getCurrentLocation } from "@/helpers/location";
 import Select from "react-select";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import {
   fetchCities,
   fetchDistricts,
@@ -308,7 +308,7 @@ export default function CreateStorePage() {
       setProvinces(formattedData);
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+        toast.error(err.response?.data?.result?.error ?? "Terjadi kesalahan", {
           position: "top-center",
         });
         return;
@@ -328,7 +328,7 @@ export default function CreateStorePage() {
       setCities(formattedData);
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+        toast.error(err.response?.data?.result?.error ?? "Terjadi kesalahan", {
           position: "top-center",
         });
         return;
@@ -348,7 +348,7 @@ export default function CreateStorePage() {
       setDistricts(formattedData);
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+        toast.error(err.response?.data?.result?.error ?? "Terjadi kesalahan", {
           position: "top-center",
         });
         return;
@@ -368,7 +368,7 @@ export default function CreateStorePage() {
       setSubDistricts(formattedData);
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+        toast.error(err.response?.data?.result?.error ?? "Terjadi kesalahan", {
           position: "top-center",
         });
         return;
@@ -387,7 +387,7 @@ export default function CreateStorePage() {
       setValue("postalCode", data.postal_code);
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+        toast.error(err.response?.data?.result?.error ?? "Terjadi kesalahan", {
           position: "top-center",
         });
         return;
@@ -501,7 +501,7 @@ export default function CreateStorePage() {
       navigate("/store");
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        toast.error(err.response?.data?.message ?? "Terjadi kesalahan", {
+        toast.error(err.response?.data?.result?.error ?? "Terjadi kesalahan", {
           position: "top-center",
         });
         return;
@@ -1173,6 +1173,7 @@ export default function CreateStorePage() {
           ) : null}
         </div>
       )}
+      <ToastContainer hideProgressBar />
     </div>
   );
 }

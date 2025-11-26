@@ -18,6 +18,10 @@ const OrdersPage = lazy(() => import("@/pages/Orders/OrdersPage"));
 const StorePage = lazy(() => import("@/pages/Store/StorePage"));
 const CreateStorePage = lazy(() => import("@/pages/Store/CreateStorePage"));
 const EditStorePage = lazy(() => import("@/pages/Store/EditStorePage"));
+const CreateCourierPage = lazy(
+  () => import("@/pages/Courier/CreateCourierPage")
+);
+const CourierPage = lazy(() => import("@/pages/Courier/CourierPage"));
 
 export const router = createBrowserRouter([
   {
@@ -70,7 +74,14 @@ export const router = createBrowserRouter([
   },
   {
     path: "/products",
-    element: <FeatureLayout title="Produk" isIcon={true} />,
+    element: (
+      <FeatureLayout
+        title="Produk"
+        isIcon={true}
+        bgColor="#ededed"
+        navigateTo="/products/create"
+      />
+    ),
     children: [
       {
         index: true,
@@ -105,6 +116,33 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <OrdersPage />,
+      },
+    ],
+  },
+  {
+    path: "/couriers",
+    element: (
+      <FeatureLayout
+        title="Kurir"
+        bgColor="#ededed"
+        isIcon={true}
+        navigateTo="/couriers/create"
+      />
+    ),
+    children: [
+      {
+        index: true,
+        element: <CourierPage />,
+      },
+    ],
+  },
+  {
+    path: "/couriers/create",
+    element: <FeatureLayout title="Tambah Kurir" />,
+    children: [
+      {
+        index: true,
+        element: <CreateCourierPage />,
       },
     ],
   },

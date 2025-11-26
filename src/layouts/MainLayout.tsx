@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar/Sidebar";
 import logo from "@/assets/images/logo/logo.png";
 import BottomNavigation from "@/components/BottomNavigation/BottomNavigation";
 import { useStoreStatus } from "@/queries/useStoreStatus";
+import notification from "@/assets/images/icon/notification.png";
 
 export default function MainLayout({ title }: { title?: string }) {
   const [isShowSidebar, setIsShowSidebar] = useState(false);
@@ -24,13 +25,20 @@ export default function MainLayout({ title }: { title?: string }) {
           {pathname === "/" ? (
             <header className="bg-black flex justify-between items-center pr-5 pl-1.5 py-4">
               <img className="w-52 " src={logo} alt="" />
-              <div
-                className="flex flex-col gap-y-2 cursor-pointer"
-                onClick={() => setIsShowSidebar(true)}
-              >
-                <div className="w-8 h-[0.18rem] bg-white rounded-2xl"></div>
-                <div className="w-8 h-[0.18rem] bg-white rounded-2xl"></div>
-                <div className="w-8 h-[0.18rem] bg-white rounded-2xl"></div>
+              <div className="flex gap-x-7 items-center">
+                <img
+                  className="w-8 cursor-pointer"
+                  src={notification}
+                  alt="Notif Icon"
+                />
+                <div
+                  className="flex flex-col gap-y-2 cursor-pointer"
+                  onClick={() => setIsShowSidebar(true)}
+                >
+                  <div className="w-8 h-[0.18rem] bg-white rounded-2xl"></div>
+                  <div className="w-8 h-[0.18rem] bg-white rounded-2xl"></div>
+                  <div className="w-8 h-[0.18rem] bg-white rounded-2xl"></div>
+                </div>
               </div>
             </header>
           ) : (
