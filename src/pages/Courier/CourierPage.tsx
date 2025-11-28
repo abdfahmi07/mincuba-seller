@@ -7,14 +7,17 @@ import { isAxiosError } from "axios";
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import courierNotFound from "@/assets/images/icon/courier-not-found.png";
+import Spinner from "@/components/LoadingSpinner/Spinner";
 
 export default function CourierPage() {
   const [couriers, setCouriers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchCouriers = async () => {
     const res = await getAllCourier();
 
     setCouriers(res.data);
+    setIsLoading(false);
   };
 
   const removeCourier = async (courierId: string, courierName: string) => {
@@ -54,15 +57,23 @@ export default function CourierPage() {
 
   return (
     <div className="flex flex-col gap-y-3 p-5">
-      {couriers.map((courier: User) => (
-        <CardCourierOther
-          key={courier.id}
-          courier={courier}
-          removeCourier={removeCourier}
-        />
-      ))}
+      {isLoading && (
+        <div className="mt-24 flex justify-center">
+          <Spinner />
+        </div>
+      )}
 
-      {couriers.length === 0 && (
+      {couriers.length !== 0 &&
+        !isLoading &&
+        couriers.map((courier: User) => (
+          <CardCourierOther
+            key={courier.id}
+            courier={courier}
+            removeCourier={removeCourier}
+          />
+        ))}
+
+      {!isLoading && couriers.length === 0 && (
         <div className="pt-24 px-4">
           <NotFound
             icon={courierNotFound}
