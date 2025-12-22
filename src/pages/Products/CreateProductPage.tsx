@@ -2,7 +2,12 @@ import MultipleImageUpload from "@/components/MultipleImageUploader/MultipleImag
 import type { FileObj, PreviewImage } from "@/interface/IPreviewImage";
 import type { Option } from "@/interface/ISelectOption";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Controller, useForm } from "react-hook-form";
+import {
+  Controller,
+  useForm,
+  type Resolver,
+  type SubmitHandler,
+} from "react-hook-form";
 import * as Yup from "yup";
 import ReactQuill from "react-quill-new";
 import Select from "react-select";
@@ -22,18 +27,21 @@ const schemaValidationCreateProduct = Yup.object({
   images: Yup.array()
     .min(1, "Foto produk wajib diisi")
     .required("Foto produk wajib diisi"),
+
   name: Yup.string().required("Nama wajib diisi"),
+
   price: Yup.string()
     .required("Harga wajib diisi")
     .test("only-number", "Harga harus berupa angka", (value) => {
-      if (!value) return false;
+      if (typeof value !== "string") return false;
       const cleaned = value.replace(/\s/g, "");
       return ONLY_DOT_NUMBER_REGEX.test(cleaned);
     }),
+
   stock: Yup.string()
     .required("Stok wajib diisi")
     .test("only-number", "Stok harus berupa angka", (value) => {
-      if (!value) return false;
+      if (typeof value !== "string") return false;
       const cleaned = value.replace(/\s/g, "");
       return ONLY_DOT_NUMBER_REGEX.test(cleaned);
     })
@@ -43,10 +51,11 @@ const schemaValidationCreateProduct = Yup.object({
       function (value) {
         const stockNumber = parseFormattedNumber(value);
         const minOrderNumber = parseFormattedNumber(this.parent.minOrder);
-        const unitValue = this.parent.unit?.value; // misal: "gram" / "liter"
+        const unitValue = this.parent.unit?.value;
 
         if (!stockNumber || !minOrderNumber) return true;
 
+        // aturan kamu: kalau liter baru ada rule 2x
         if (unitValue === "liter") {
           return stockNumber >= minOrderNumber * 2;
         }
@@ -54,13 +63,15 @@ const schemaValidationCreateProduct = Yup.object({
         return true;
       }
     ),
+
   minOrder: Yup.string()
     .required("Min. pemesanan wajib diisi")
     .test("only-number", "Min. pemesanan harus berupa angka", (value) => {
-      if (!value) return false;
+      if (typeof value !== "string") return false;
       const cleaned = value.replace(/\s/g, "");
       return ONLY_DOT_NUMBER_REGEX.test(cleaned);
     }),
+
   description: Yup.string()
     .test("desc-required", "Deskripsi wajib diisi", (value) => {
       if (!value) return false;
@@ -73,13 +84,18 @@ const schemaValidationCreateProduct = Yup.object({
       return plainText.length > 0;
     })
     .required("Deskripsi wajib diisi"),
-  weight: Yup.string()
-    .required("Berat wajib diisi")
-    .test("only-number", "Berat harus berupa angka", (value) => {
-      if (!value) return false;
-      const cleaned = value.replace(/\s/g, "");
-      return ONLY_DOT_NUMBER_REGEX.test(cleaned);
-    }),
+  weight: Yup.string().when("unit", ([unit], schema) => {
+    if (unit?.value === "liter") {
+      return schema.notRequired(); // skip total
+    }
+
+    return schema
+      .required("Berat wajib diisi")
+      .test("only-number", "Berat harus berupa angka", (value) => {
+        if (typeof value !== "string") return false;
+        return ONLY_DOT_NUMBER_REGEX.test(value.replace(/\s/g, ""));
+      });
+  }),
   condition: Yup.object({
     value: Yup.string(),
     label: Yup.string(),
@@ -88,23 +104,27 @@ const schemaValidationCreateProduct = Yup.object({
     .test(
       "required-condition",
       "Kondisi barang wajib dipilih",
-      (v) => !!v && !!v.value
+      (v) => !!v?.value
     ),
   unit: Yup.object({
     value: Yup.string(),
     label: Yup.string(),
   })
     .nullable()
-    .test(
-      "required-unit",
-      "Unit barang wajib dipilih",
-      (v) => !!v && !!v.value
-    ),
+    .test("required-unit", "Unit barang wajib dipilih", (v) => !!v?.value),
 }).required();
 
-type CreateProductFormValues = Yup.InferType<
-  typeof schemaValidationCreateProduct
->;
+type CreateProductFormValues = {
+  images: PreviewImage[];
+  name: string;
+  price: string;
+  stock: string;
+  minOrder: string;
+  description: string;
+  weight: string; // ✅ selalu ada di form
+  condition: Option | null;
+  unit: Option | null;
+};
 
 const modules = {
   toolbar: [
@@ -150,7 +170,9 @@ export default function CreateProductPage() {
     setValue,
     formState: { errors },
   } = useForm<CreateProductFormValues>({
-    resolver: yupResolver(schemaValidationCreateProduct),
+    resolver: yupResolver(
+      schemaValidationCreateProduct
+    ) as unknown as Resolver<CreateProductFormValues>,
     mode: "onSubmit",
     reValidateMode: "onChange",
     defaultValues: {
@@ -221,7 +243,9 @@ export default function CreateProductPage() {
     return results.filter((url): url is string => Boolean(url));
   };
 
-  const addProduct = async (data: CreateProductFormValues) => {
+  const addProduct: SubmitHandler<CreateProductFormValues> = async (
+    data: CreateProductFormValues
+  ) => {
     try {
       const imageFiles = data.images.map((image: PreviewImage) => image.file);
 
@@ -233,7 +257,10 @@ export default function CreateProductPage() {
         price: parseFormattedNumber(data.price),
         condition: data.condition?.value ?? "",
         unit: data.unit?.value ?? "",
-        weight: parseFormattedNumber(data.weight),
+        weight:
+          data.unit?.value === "grams"
+            ? parseFormattedNumber(data.weight ?? "")
+            : 1,
         min: parseFormattedNumber(data.minOrder),
         stock: parseFormattedNumber(data.stock),
         images: uploadedImageUrls,
@@ -336,7 +363,13 @@ export default function CreateProductPage() {
                   }}
                   options={unitOptions}
                   value={field.value}
-                  onChange={(option) => field.onChange(option)}
+                  onChange={(option) => {
+                    field.onChange(option);
+                    setValue("price", "");
+                    setValue("minOrder", "");
+                    setValue("stock", "");
+                    setValue("weight", "");
+                  }}
                   isClearable
                   isSearchable
                 />
@@ -379,31 +412,6 @@ export default function CreateProductPage() {
           </div>
         </div>
 
-        {/* Stok */}
-        <div className="flex flex-col gap-y-4 text-sm">
-          <label className="font-medium">Stok</label>
-          <div className="flex flex-col gap-y-2">
-            <div className="relative">
-              <input
-                className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4] w-full"
-                type="text"
-                placeholder="Stok Tersedia"
-                value={stockValue}
-                {...register("stock")}
-                onChange={(e) => handleNumericChange(e, "stock")}
-              />
-              {unitValue?.value === "liter" && (
-                <span className="absolute right-0 bottom-3 text-[#B4B4B4] font-semibold">
-                  Liter
-                </span>
-              )}
-            </div>
-            {errors.stock && (
-              <p className="text-xs text-red-500">{errors.stock.message}</p>
-            )}
-          </div>
-        </div>
-
         {/* Min. Pesanan */}
         <div className="flex flex-col gap-y-4 text-sm">
           <label className="font-medium">Min. Pesanan</label>
@@ -429,28 +437,55 @@ export default function CreateProductPage() {
           </div>
         </div>
 
-        {/* Berat */}
-        <div className="flex flex-col gap-y-4 w-fit text-sm">
-          <label className="font-medium">Tentukan berat satuan</label>
+        {/* Stok */}
+        <div className="flex flex-col gap-y-4 text-sm">
+          <label className="font-medium">Stok</label>
           <div className="flex flex-col gap-y-2">
-            <div className="relative w-40 border-b-2 border-black/10">
+            <div className="relative">
               <input
-                className="outline-none py-2 placeholder:text-[#B4B4B4] w-[65%]"
+                className="outline-none border-b-2 border-black/10 py-2 placeholder:text-[#B4B4B4] w-full"
                 type="text"
-                placeholder="Berat"
-                value={weightValue}
-                {...register("weight")}
-                onChange={(e) => handleNumericChange(e, "weight")}
+                placeholder="Stok Tersedia"
+                value={stockValue}
+                {...register("stock")}
+                onChange={(e) => handleNumericChange(e, "stock")}
               />
-              <span className="absolute right-0 bottom-2 text-[#B4B4B4] font-semibold bg-white">
-                {unitValue?.label}
-              </span>
+              {unitValue?.value === "liter" && (
+                <span className="absolute right-0 bottom-3 text-[#B4B4B4] font-semibold">
+                  Liter
+                </span>
+              )}
             </div>
-            {errors.weight && (
-              <p className="text-xs text-red-500">{errors.weight.message}</p>
+            {errors.stock && (
+              <p className="text-xs text-red-500">{errors.stock.message}</p>
             )}
           </div>
         </div>
+
+        {/* Berat */}
+        {unitValue?.value === "grams" ? (
+          <div className="flex flex-col gap-y-4 w-fit text-sm">
+            <label className="font-medium">Tentukan berat satuan</label>
+            <div className="flex flex-col gap-y-2">
+              <div className="relative w-40 border-b-2 border-black/10">
+                <input
+                  className="outline-none py-2 placeholder:text-[#B4B4B4] w-[65%]"
+                  type="text"
+                  placeholder="Berat"
+                  value={weightValue}
+                  {...register("weight")}
+                  onChange={(e) => handleNumericChange(e, "weight")}
+                />
+                <span className="absolute right-0 bottom-2 text-[#B4B4B4] font-semibold bg-white">
+                  {unitValue?.label}
+                </span>
+              </div>
+              {errors.weight && (
+                <p className="text-xs text-red-500">{errors.weight.message}</p>
+              )}
+            </div>
+          </div>
+        ) : null}
 
         {/* Deskripsi */}
         <div className="flex flex-col gap-y-4 text-sm">

@@ -8,15 +8,18 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import * as Yup from "yup";
 import { Eye, EyeOff } from "lucide-react";
+import { getPasswordStrength } from "@/helpers/password";
 
 const schemaValidationFormCourier = Yup.object({
   name: Yup.string().required("Nama Kurir wajib diisi"),
   phone: Yup.string()
     .required("Nomor HP wajib diisi")
     .matches(
-      /^(\\+62|62|0)8[1-9][0-9]{6,12}$/,
+      /^(\\+62|62|0)8[1-9][0-9]*$/,
       "Nomor HP tidak valid, gunakan format Indonesia"
-    ),
+    )
+    .min(10, "Nomor HP minimal 10 digit")
+    .max(13, "Nomor HP maksimal 13 digit"),
   email: Yup.string()
     .trim()
     .email("Email tidak valid, cek kembali")
@@ -46,6 +49,7 @@ export default function CreateCourier() {
     register,
     handleSubmit,
     trigger,
+    watch,
     formState: { errors },
   } = useForm<FormCourier>({
     resolver: yupResolver(schemaValidationFormCourier),
@@ -83,6 +87,9 @@ export default function CreateCourier() {
       });
     }
   };
+
+  const passwordValue = watch("password") || "";
+  const passwordStrength = getPasswordStrength(passwordValue);
 
   return (
     <div className="bg-white min-h-screen rounded-t-4xl font-poppins pt-6 px-6 mb-24">
@@ -186,13 +193,37 @@ export default function CreateCourier() {
                 className="text-xs text-[#F05000] font-medium"
                 onClick={() => setShowPassword((prev) => !prev)}
               >
-                {showConfirmPassword ? <EyeOff /> : <Eye />}
+                {showPassword ? <EyeOff /> : <Eye />}
               </button>
             </div>
             {errors.password && (
               <p className="text-xs text-red-500">{errors.password.message}</p>
             )}
           </div>
+
+          {/* Password strength bar */}
+          {passwordValue && (
+            <div className="flex flex-col gap-y-1">
+              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-300 ${passwordStrength.color}`}
+                  style={{ width: `${passwordStrength.percent}%` }}
+                />
+              </div>
+
+              <span
+                className={`text-xs font-medium ${
+                  passwordStrength.label === "Weak"
+                    ? "text-red-500"
+                    : passwordStrength.label === "Medium"
+                    ? "text-yellow-500"
+                    : "text-green-600"
+                }`}
+              >
+                Password strength: {passwordStrength.label}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Konfirmasi Password */}
