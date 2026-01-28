@@ -19,7 +19,7 @@ export default function OrdersPage() {
   const { data: dataStore, isLoading: isLoadingStoreStatus } = useStoreStatus();
 
   const [orders, setOrders] = useState<Order[]>([]);
-  const [status, setStatus] = useState<string>(""); // default: pesanan baru
+  const [status, setStatus] = useState<string>("");
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -28,7 +28,6 @@ export default function OrdersPage() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  /* ===================== FETCH PAGE ===================== */
   const loadPage = useCallback(
     async (pageToLoad: number) => {
       if (loadingRef.current || !hasMore) return;
@@ -37,7 +36,6 @@ export default function OrdersPage() {
       setIsLoading(true);
 
       try {
-        // 🔥 PENTING: jangan kirim "" ke backend
         const statusParam = status === "" ? undefined : status;
 
         const res = await getOrders(statusParam, pageToLoad);
@@ -68,14 +66,12 @@ export default function OrdersPage() {
     [status, hasMore],
   );
 
-  /* ===================== LOAD WHEN PAGE CHANGE ===================== */
   useEffect(() => {
     if (dataStore?.exists) {
       loadPage(page);
     }
   }, [page, loadPage, dataStore]);
 
-  /* ===================== INTERSECTION OBSERVER ===================== */
   useEffect(() => {
     if (!hasMore) return;
 
@@ -100,9 +96,8 @@ export default function OrdersPage() {
     if (sentinel) observerRef.current.observe(sentinel);
 
     return () => observerRef.current?.disconnect();
-  }, [hasMore, status]); // 🔥 HAPUS page
+  }, [hasMore, status]);
 
-  /* ===================== AUTO LOAD IF FIRST PAGE SHORT ===================== */
   useEffect(() => {
     if (page !== 1) return;
     if (!hasMore) return;
@@ -121,7 +116,6 @@ export default function OrdersPage() {
     });
   }, [orders, page, hasMore]);
 
-  /* ===================== RESET WHEN STATUS CHANGE ===================== */
   useEffect(() => {
     observerRef.current?.disconnect();
     loadingRef.current = false;
@@ -131,7 +125,6 @@ export default function OrdersPage() {
     setHasMore(true);
   }, [status]);
 
-  /* ===================== ACTIONS ===================== */
   const reloadFirstPage = () => {
     observerRef.current?.disconnect();
     loadingRef.current = false;
@@ -188,7 +181,6 @@ export default function OrdersPage() {
 
   const isFirstPageLoading = isLoading && page === 1 && orders.length === 0;
 
-  /* ===================== UI ===================== */
   return (
     <>
       {isLoadingStoreStatus && (

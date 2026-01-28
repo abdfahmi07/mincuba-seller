@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import BottomNavigation from "@/components/BottomNavigation/BottomNavigation";
 import { ChevronLeft, Plus } from "lucide-react";
 import { useStoreStatus } from "@/queries/useStoreStatus";
+import { useBackToHome } from "@/hooks/useBackToHome";
 
 export default function FeatureLayout({
   title,
@@ -15,7 +16,7 @@ export default function FeatureLayout({
   bgColor?: string;
 }) {
   const { data } = useStoreStatus();
-  const navigate = useNavigate();
+  const goBack = useBackToHome();
 
   return (
     <div style={{ backgroundColor: bgColor }}>
@@ -26,7 +27,7 @@ export default function FeatureLayout({
         >
           <header className="bg-[#F05000] grid grid-cols-[1fr_2fr_1fr] justify-items-center px-4 py-5">
             <button
-              onClick={() => navigate(-1)}
+              onClick={goBack}
               className="justify-self-start cursor-pointer"
             >
               <ChevronLeft color="#fff" strokeWidth={3} />
