@@ -14,7 +14,7 @@ import closedStore from "@/assets/images/icon/store-closed.png";
 import productNotFound from "@/assets/images/icon/product-lauch.png";
 import Spinner from "@/components/LoadingSpinner/Spinner";
 import { confirmAlert } from "@/helpers/confirmAlert";
-import { toIDNCurrency } from "@/helpers/number";
+import { formatIDNDecimal, toIDNCurrency } from "@/helpers/number";
 
 function BottomSheetProductDetail({
   open,
@@ -159,7 +159,7 @@ function BottomSheetProductDetail({
       >
         {/* DRAG HANDLE AREA (only this area draggable) */}
         <div
-          className="px-4 pt-3 pb-2 border-b select-none"
+          className="px-4 pt-3 pb-2 border-b-2 border-b-gray-200 select-none"
           style={{ touchAction: "none" }} // ✅ penting untuk drag
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -170,8 +170,8 @@ function BottomSheetProductDetail({
 
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col">
-              <h3 className="font-poppins font-semibold text-base leading-6 mt-1 mb-2">
-                {title}
+              <h3 className="font-poppins font-semibold text-base leading-6 mb-2">
+                Detail Produk
               </h3>
               {/* <p className="text-xs text-gray-500">
                 Drag ke atas untuk Perluas • Drag ke bawah untuk Tutup
@@ -187,8 +187,8 @@ function BottomSheetProductDetail({
           ) : (
             <div className="space-y-4">
               {/* preview image (ambil field sesuai struktur produk kamu) */}
-              <div className="rounded-2xl border p-3">
-                <div className="flex gap-3">
+              <div className="rounded-2xl bg-gray-100 p-4">
+                <div className="flex gap-3.5">
                   <div className="w-24 h-24 rounded-xl bg-gray-100 overflow-hidden flex items-center justify-center">
                     {/* sesuaikan: product.images[0]?.url / product.image / dll */}
                     {(product as Product)?.ProductImage?.[0]?.url ? (
@@ -206,7 +206,7 @@ function BottomSheetProductDetail({
 
                   <div className="flex-1">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="font-poppins font-semibold text-sm">
+                      <p className="font-poppins font-semibold text-base">
                         {title}
                       </p>
                       {/* <span
@@ -223,9 +223,9 @@ function BottomSheetProductDetail({
                       </span> */}
                     </div>
 
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                      <div className="rounded-xl bg-gray-50 p-2">
-                        <p className="text-gray-500">Harga</p>
+                    <div className="mt-2 grid grid-rows-2 gap-2 text-sm">
+                      <div className="rounded-lg bg-white py-2 px-2.5">
+                        <p className="text-gray-500 ">Harga</p>
                         <p className="font-poppins font-semibold text-gray-900 mt-1">
                           {(product as Product)?.unit === "liter"
                             ? toIDNCurrency((product as Product)?.price) +
@@ -235,14 +235,14 @@ function BottomSheetProductDetail({
                         </p>
                       </div>
 
-                      <div className="rounded-xl bg-gray-50 p-2">
-                        <p className="text-gray-500">Stok</p>
+                      <div className="rounded-xl bg-gray-50 py-2 px-2.5">
+                        <p className="text-gray-500 ">Stok</p>
                         <p className="font-poppins font-semibold text-gray-900 mt-1">
                           {(product as Product)?.unit !== "grams"
-                            ? `${(product as Product)?.stock} ${
+                            ? `${formatIDNDecimal((product as Product)?.stock)} ${
                                 (product as Product)?.unit
                               }`
-                            : `${(product as Product)?.stock} barang`}
+                            : `${formatIDNDecimal((product as Product)?.stock)} barang`}
                         </p>
                       </div>
                     </div>
@@ -251,10 +251,8 @@ function BottomSheetProductDetail({
               </div>
 
               {/* sections */}
-              <div className="rounded-2xl border p-4 space-y-3">
-                <h4 className="font-poppins font-semibold text-sm">
-                  Informasi Produk
-                </h4>
+              <div className="rounded-2xl bg-gray-100 p-4 space-y-2">
+                <h4 className="font-poppins font-semibold">Informasi Produk</h4>
                 {(product as Product).unit === "grams" && (
                   <InfoRow
                     label="Berat"
@@ -280,10 +278,8 @@ function BottomSheetProductDetail({
                 />
               </div>
 
-              <div className="rounded-2xl border p-4 space-y-3">
-                <h4 className="font-poppins font-semibold text-sm">
-                  Deskripsi
-                </h4>
+              <div className="rounded-2xl bg-gray-100 p-4 space-y-2">
+                <h4 className="font-poppins font-semibold">Deskripsi</h4>
 
                 <p
                   className="text-sm text-gray-700 leading-6"
@@ -302,13 +298,13 @@ function BottomSheetProductDetail({
           <div className="flex gap-2">
             <button
               onClick={() => setExpanded(true)}
-              className="flex-1 font-poppins text-sm py-2.5 rounded-2xl border hover:bg-gray-50"
+              className="flex-1 font-poppins text-sm py-2.5 rounded-xl border hover:bg-gray-50"
             >
               Lihat Full Detail
             </button>
             <button
               onClick={onClose}
-              className="flex-1 font-poppins text-sm py-2.5 rounded-2xl bg-gray-900 text-white hover:opacity-90"
+              className="flex-1 font-poppins text-sm py-2.5 rounded-xl bg-[#F05000] text-white hover:opacity-90"
             >
               Selesai
             </button>
@@ -322,8 +318,8 @@ function BottomSheetProductDetail({
 function InfoRow({ label, value }: { label: string; value: unknown }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-xs font-poppins font-semibold text-gray-900 text-right">
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-sm font-poppins font-semibold text-gray-900 text-right">
         {String(value ?? "-")}
       </p>
     </div>
@@ -332,7 +328,7 @@ function InfoRow({ label, value }: { label: string; value: unknown }) {
 
 export default function ProductsPage() {
   const loadingRef = useRef(false);
-  const { data, isLoading: isLoadingStoreStatus } = useStoreStatus();
+  const { data: dataStore, isLoading: isLoadingStoreStatus } = useStoreStatus();
   const [products, setProducts] = useState<Product[]>([]);
 
   const [page, setPage] = useState(1);
@@ -384,8 +380,10 @@ export default function ProductsPage() {
   }, []);
 
   useEffect(() => {
-    loadPage(page);
-  }, [page, loadPage]);
+    if (dataStore?.exists) {
+      loadPage(page);
+    }
+  }, [page, loadPage, dataStore]);
 
   useEffect(() => {
     if (!hasMore) return;
@@ -403,7 +401,7 @@ export default function ProductsPage() {
         root: null,
         rootMargin: "200px", // ✅ biar fetch sebelum mentok bawah
         threshold: 0,
-      }
+      },
     );
 
     if (sentinelRef.current) observerRef.current.observe(sentinelRef.current);
@@ -467,7 +465,7 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {!isLoadingStoreStatus && data && !data.exists && (
+      {!isLoadingStoreStatus && dataStore && !dataStore.exists && (
         <div className="pt-24 px-4">
           <NotFound
             icon={closedStore}
@@ -478,7 +476,7 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {!isLoadingStoreStatus && data && data.exists && (
+      {!isLoadingStoreStatus && dataStore && dataStore.exists && (
         <div className="p-4 flex flex-col gap-y-3 mb-20">
           {isFirstPageLoading && (
             <div className="mt-24 flex justify-center">
@@ -493,7 +491,7 @@ export default function ProductsPage() {
                   {products.length} Produk
                 </h6>
                 <p className="text-xs text-gray-500">
-                  Tap item untuk lihat detail (drawer)
+                  Tap item untuk lihat detail
                 </p>
               </div>
 

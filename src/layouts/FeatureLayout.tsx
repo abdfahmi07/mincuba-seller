@@ -21,7 +21,7 @@ export default function FeatureLayout({
     <div style={{ backgroundColor: bgColor }}>
       <div className="min-h-screen max-w-md m-auto">
         <main
-          className={`min-h-screen h-full`}
+          className={`min-h-screen pb-12`}
           style={{ backgroundColor: bgColor }}
         >
           <header className="bg-[#F05000] grid grid-cols-[1fr_2fr_1fr] justify-items-center px-4 py-5">
