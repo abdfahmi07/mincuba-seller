@@ -8,7 +8,7 @@ import list from "@/assets/images/icon/list.png";
 import CardStats from "@/components/Card/CardStats";
 import CardCourier from "@/components/Card/CardCourier";
 import { useStoreStatus } from "@/queries/useStoreStatus";
-import closedStore from "@/assets/images/icon/store-closed.png";
+import closedStore from "@/assets/images/icon/not-found-icon.png";
 import NotFound from "@/components/NotFound/NotFound";
 import { openOrCloseStore } from "@/services/api/store";
 import Spinner from "@/components/LoadingSpinner/Spinner";
@@ -86,13 +86,13 @@ export default function HomePage() {
 
   return (
     <>
-      {isLoadingStoreStatus && (
-        <div className="mt-24 flex justify-center">
-          <Spinner />
-        </div>
-      )}
       <div className="relative bg-white min-h-[90vh] rounded-t-4xl font-poppins px-6 py-12">
-        {!isLoadingStoreStatus && dataStore && dataStore?.exists ? (
+        {isLoadingStoreStatus && (
+          <div className="mt-24 flex justify-center">
+            <Spinner />
+          </div>
+        )}
+        {!isLoadingStoreStatus && dataStore && dataStore?.exists && (
           <>
             <div className="absolute -top-6 left-0 right-0 flex justify-center">
               {/* Switch Container */}
@@ -305,7 +305,8 @@ export default function HomePage() {
               </div>
             </div>
           </>
-        ) : (
+        )}
+        {dataStore && !dataStore?.exists && (
           <div className="py-2">
             <NotFound
               icon={closedStore}

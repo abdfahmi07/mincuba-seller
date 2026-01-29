@@ -13,7 +13,9 @@ import {
   rejectOrder,
 } from "@/services/api/order";
 import Spinner from "@/components/LoadingSpinner/Spinner";
-import closedStore from "@/assets/images/icon/store-closed.png";
+import closedStore from "@/assets/images/icon/not-found-icon.png";
+import notFoundBox from "@/assets/images/icon/not-found-box.png";
+import { STATUS_ORDER } from "@/utils/constants";
 
 export default function OrdersPage() {
   const { data: dataStore, isLoading: isLoadingStoreStatus } = useStoreStatus();
@@ -189,7 +191,7 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {!isLoadingStoreStatus && dataStore && dataStore?.exists ? (
+      {!isLoadingStoreStatus && dataStore && dataStore?.exists && (
         <>
           <Tabs handleChangeStatus={setStatus} status={status} />
           <div className="grid grid-cols-1 gap-3 p-4">
@@ -200,9 +202,13 @@ export default function OrdersPage() {
             )}
 
             {!isLoading && orders.length === 0 && (
-              <h5 className="text-base mx-auto my-40 font-poppins">
-                Belum ada pesanan.
-              </h5>
+              <div className="pt-18 px-4">
+                <NotFound
+                  icon={notFoundBox}
+                  message={`Belum Ada Pesanan.  
+                  Silakan cek kembali secara berkala.`}
+                />
+              </div>
             )}
 
             {orders.map((order) => (
@@ -225,7 +231,9 @@ export default function OrdersPage() {
             <div ref={sentinelRef} className="h-10" />
           </div>
         </>
-      ) : (
+      )}
+
+      {dataStore && !dataStore?.exists && (
         <div className="pt-24 px-4">
           <NotFound
             icon={closedStore}
@@ -235,7 +243,6 @@ export default function OrdersPage() {
           />
         </div>
       )}
-
       <ToastContainer hideProgressBar />
     </>
   );

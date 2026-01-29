@@ -6,7 +6,7 @@ import { deleteCourier, getAllCourier } from "@/services/api/courier";
 import { isAxiosError } from "axios";
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
-import courierNotFound from "@/assets/images/icon/courier-not-found.png";
+import courierNotFound from "@/assets/images/icon/not-found-icon.png";
 import Spinner from "@/components/LoadingSpinner/Spinner";
 
 export default function CourierPage() {
