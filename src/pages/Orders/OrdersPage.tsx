@@ -15,7 +15,6 @@ import {
 import Spinner from "@/components/LoadingSpinner/Spinner";
 import closedStore from "@/assets/images/icon/not-found-icon.png";
 import notFoundBox from "@/assets/images/icon/not-found-box.png";
-import { STATUS_ORDER } from "@/utils/constants";
 
 export default function OrdersPage() {
   const { data: dataStore, isLoading: isLoadingStoreStatus } = useStoreStatus();
