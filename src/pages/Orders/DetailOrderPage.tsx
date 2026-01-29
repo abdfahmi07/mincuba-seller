@@ -105,8 +105,10 @@ const DetailOrderPage = () => {
             <div className="flex items-center justify-between">
               <h6 className="text-gray-500">Tanggal Pembelian</h6>
               <h6 className="font-medium ">
-                {order?.created_at
-                  ? moment(order?.created_at).format("DD MMM YYYY, HH:mm")
+                {order?.Payment.payment_at
+                  ? moment(order?.Payment.payment_at).format(
+                      "DD MMM YYYY, HH:mm",
+                    )
                   : "-"}
               </h6>
             </div>

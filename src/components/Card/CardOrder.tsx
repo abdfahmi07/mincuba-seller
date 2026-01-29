@@ -30,7 +30,9 @@ export default function CardOrder({
             <div className="flex flex-col gap-y-0.5 pb-2">
               <h6 className="#A7A5A5 text-sm">Pembelian</h6>
               <h5 className="font-semibold text-sm">
-                {moment(order.created_at).format("DD MMM YYYY H:mm")}
+                {order.Payment.payment_at
+                  ? moment(order.Payment.payment_at).format("DD MMM YYYY H:mm")
+                  : "-"}
               </h5>
             </div>
             {/* {!isIncomingOrder && ( */}

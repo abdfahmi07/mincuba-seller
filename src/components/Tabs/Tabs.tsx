@@ -9,7 +9,7 @@ export default function Tabs({
   status: string;
 }) {
   const tabs = [
-    { title: "Baru", value: "" },
+    { title: "Pesanan Baru", value: "" },
     { title: "Diproses", value: "CONFIRM" },
     { title: "Telah Disiapkan", value: "READY_TO_PICKUP" },
     { title: "Dikirim", value: "DELIVERY" },

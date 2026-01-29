@@ -95,6 +95,7 @@ export interface Payment {
   status_message: unknown;
   Orders: unknown;
   expire_at: unknown;
+  payment_at: unknown;
   created_at: string;
   updated_at: string;
   deleted_at: unknown;
