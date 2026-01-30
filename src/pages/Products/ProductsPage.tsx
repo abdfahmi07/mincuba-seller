@@ -352,6 +352,21 @@ export default function ProductsPage() {
     setTimeout(() => setSelectedProduct(null), 200);
   };
 
+  const fetchFirstPage = useCallback(async () => {
+    loadingRef.current = true;
+    setLoading(true);
+
+    try {
+      const res = await getAllProduct(1);
+      setProducts(res.data ?? []);
+      setHasMore(res.pagination.current_page < res.pagination.pages);
+      setPage(1);
+    } finally {
+      setLoading(false);
+      loadingRef.current = false;
+    }
+  }, []);
+
   const loadPage = useCallback(async (pageToLoad: number) => {
     if (loadingRef.current) return;
     loadingRef.current = true;
@@ -409,11 +424,11 @@ export default function ProductsPage() {
     return () => observerRef.current?.disconnect();
   }, [hasMore]);
 
-  const reloadFirstPage = () => {
-    setProducts([]);
-    setHasMore(true);
-    setPage(1); // ✅ effect akan fetch page 1 lagi
-  };
+  // const reloadFirstPage = () => {
+  //   setProducts([]);
+  //   setHasMore(true);
+  //   setPage(1); // ✅ effect akan fetch page 1 lagi
+  // };
 
   const removeProduct = async (productId: string, productName: string) => {
     try {
@@ -427,7 +442,7 @@ export default function ProductsPage() {
       if (!ok) return;
 
       await deleteProduct(productId);
-      reloadFirstPage();
+      await fetchFirstPage();
     } catch (err: unknown) {
       if (isAxiosError(err)) {
         toast.error(err.response?.data?.result?.error ?? "Terjadi kesalahan", {
@@ -443,7 +458,7 @@ export default function ProductsPage() {
     try {
       const payloads = { active: isActive };
       await updateProduct(productId, payloads);
-      reloadFirstPage();
+      await fetchFirstPage();
     } catch (err: unknown) {
       if (isAxiosError(err)) {
         toast.error(err.response?.data?.result?.error ?? "Terjadi kesalahan", {

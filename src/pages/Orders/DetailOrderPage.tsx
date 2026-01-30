@@ -142,35 +142,41 @@ const DetailOrderPage = () => {
             </h5>
           </div>
           <div className="flex flex-col gap-y-4 pb-4 pt-1 px-4">
-            {order?.OrderItems.map((orderItem: OrderItem, index: number) => (
-              <div key={index} className="flex items-start gap-x-3">
-                <img
-                  className="w-18 h-16 object-cover rounded-md"
-                  src={
-                    orderItem.Product.ProductImage?.[0]?.url ??
-                    "/images/product-placeholder.png"
-                  }
-                  alt={orderItem.Product.name}
-                />
+            {order?.OrderItems.map((orderItem: OrderItem, index: number) => {
+              if (orderItem.Product) {
+                return (
+                  <div key={index} className="flex items-start gap-x-3">
+                    <img
+                      className="w-18 h-16 object-cover rounded-md"
+                      src={
+                        orderItem.Product.ProductImage?.[0]?.url ??
+                        "/images/product-placeholder.png"
+                      }
+                      alt={orderItem.Product.name}
+                    />
 
-                <div className="flex flex-col gap-y-1.5 w-full">
-                  <h5 className="font-semibold text-sm">
-                    {orderItem.Product.name}
-                  </h5>
+                    <div className="flex flex-col gap-y-1.5 w-full">
+                      <h5 className="font-semibold text-sm">
+                        {orderItem.Product.name}
+                      </h5>
 
-                  <div className="flex justify-between">
-                    <h6 className="text-sm">
-                      {`${formatNumberWithDots(String(orderItem.qty))} ${
-                        orderItem.Product.unit === "liter" ? "liter" : "barang"
-                      }`}
-                    </h6>
-                    <h6 className="text-sm">
-                      Rp {formatNumberWithDots(orderItem.total_price)}
-                    </h6>
+                      <div className="flex justify-between">
+                        <h6 className="text-sm">
+                          {`${formatNumberWithDots(String(orderItem.qty))} ${
+                            orderItem.Product.unit === "liter"
+                              ? "liter"
+                              : "barang"
+                          }`}
+                        </h6>
+                        <h6 className="text-sm">
+                          Rp {formatNumberWithDots(orderItem.total_price)}
+                        </h6>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                );
+              }
+            })}
             <div className="flex flex-col gap-y-2 mt-2">
               <div className="flex justify-between">
                 <h6 className="text-black/60 text-sm">Harga Barang</h6>

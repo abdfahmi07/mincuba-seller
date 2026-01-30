@@ -53,46 +53,9 @@ export default function CardOrder({
               </h6>
             </div>
             {order.OrderItems.slice(0, 1).map(
-              (orderItem: OrderItem, index: number) => (
-                <div key={index} className="flex items-start gap-x-3">
-                  <img
-                    className="w-18 h-16 object-cover rounded-md"
-                    src={
-                      orderItem.Product.ProductImage?.[0]?.url ??
-                      "/images/product-placeholder.png"
-                    }
-                    alt={orderItem.Product.name}
-                  />
-
-                  <div className="flex flex-col gap-y-1 w-full">
-                    <h5 className="font-semibold text-base">
-                      {orderItem.Product.name}
-                    </h5>
-
-                    <div className="flex justify-between">
-                      <h6 className="text-sm">
-                        {`${formatNumberWithDots(String(orderItem.qty))} ${
-                          orderItem.Product.unit === "liter"
-                            ? "liter"
-                            : "barang"
-                        }`}
-                      </h6>
-                      <h6 className="text-sm">
-                        Rp {formatNumberWithDots(orderItem.total_price)}
-                      </h6>
-                    </div>
-                  </div>
-                </div>
-              ),
-            )}
-
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out
-        ${expanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
-            >
-              <div className="flex flex-col gap-y-3 mt-3">
-                {order.OrderItems.slice(1).map(
-                  (orderItem: OrderItem, index: number) => (
+              (orderItem: OrderItem, index: number) => {
+                if (orderItem.Product) {
+                  return (
                     <div key={index} className="flex items-start gap-x-3">
                       <img
                         className="w-18 h-16 object-cover rounded-md"
@@ -122,7 +85,52 @@ export default function CardOrder({
                         </div>
                       </div>
                     </div>
-                  ),
+                  );
+                }
+              },
+            )}
+
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-in-out
+        ${expanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}
+            >
+              <div className="flex flex-col gap-y-3 mt-3">
+                {order.OrderItems.slice(1).map(
+                  (orderItem: OrderItem, index: number) => {
+                    if (orderItem.Product) {
+                      return (
+                        <div key={index} className="flex items-start gap-x-3">
+                          <img
+                            className="w-18 h-16 object-cover rounded-md"
+                            src={
+                              orderItem.Product.ProductImage?.[0]?.url ??
+                              "/images/product-placeholder.png"
+                            }
+                            alt={orderItem.Product.name}
+                          />
+
+                          <div className="flex flex-col gap-y-1 w-full">
+                            <h5 className="font-semibold text-base">
+                              {orderItem.Product.name}
+                            </h5>
+
+                            <div className="flex justify-between">
+                              <h6 className="text-sm">
+                                {`${formatNumberWithDots(String(orderItem.qty))} ${
+                                  orderItem.Product.unit === "liter"
+                                    ? "liter"
+                                    : "barang"
+                                }`}
+                              </h6>
+                              <h6 className="text-sm">
+                                Rp {formatNumberWithDots(orderItem.total_price)}
+                              </h6>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                  },
                 )}
               </div>
             </div>

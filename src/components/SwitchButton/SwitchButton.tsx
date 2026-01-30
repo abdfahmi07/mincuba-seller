@@ -6,7 +6,10 @@ interface ToggleProps {
 export default function SwitchButton({ checked, onChange }: ToggleProps) {
   return (
     <button
-      onClick={() => onChange(!checked)}
+      onClick={(e) => {
+        e.stopPropagation();
+        onChange(!checked);
+      }}
       className={`
         relative inline-flex items-center h-7 w-12 rounded-full transition-all duration-300
         ${checked ? "bg-[#F05000]" : "bg-gray-300"}
